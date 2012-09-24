@@ -89,45 +89,41 @@ class ListingQueryHelper {
         *  every value is added to the array, but we pop off values older then the specified threshold (day, week, month)
         */
         $dailyValues   = array();
-        $weeklyValues  = array();
-        $monthlyValues = array();
         foreach ($rates as $rateEntry) {
             $date = new DateTime("{$rateEntry['rateDatetime']}");
             $date->setTimezone(new DateTimeZone('UTC'));
             $timestamp = $date->getTimestamp();
 
             $dailyValues[$timestamp]   = $rateEntry['rate'];
-            $weeklyValues[$timestamp]  = $rateEntry['rate'];
-            $monthlyValues[$timestamp] = $rateEntry['rate'];
             $rateEntry['rate'] = round($rateEntry['rate'], 2);
 
 
             foreach ($dailyValues as $keyTimestamp => $value) {
-                if ($timestamp - $keyTimestamp > 86400/* 1 day */) {
+                if ($timestamp - $keyTimestamp > 3600/* 1 day */) {
                     unset($dailyValues[$keyTimestamp]);
                 } else {
                     break;
                 }
             }
-            foreach ($weeklyValues as $keyTimestamp => $value) {
-                if ($timestamp - $keyTimestamp > 604800/* 7 days */) {
-                    unset($weeklyValues[$keyTimestamp]);
-                } else {
-                    break;
-                }
-            }
-            foreach ($monthlyValues as $keyTimestamp => $value) {
-                if ($timestamp - $keyTimestamp > 18144000/* 30 days */) {
-                    unset($monthlyValues[$keyTimestamp]);
-                } else {
-                    break;
-                }
-            }
 
-            $data['raw'][]     = array($timestamp*1000, $rateEntry['rate']);
-            $data['daily'][]   = array($timestamp*1000, round(array_sum($dailyValues)   / count($dailyValues),   2));
-            $data['weekly'][]  = array($timestamp*1000, round(array_sum($weeklyValues)  / count($weeklyValues),  2));
-            $data['monthly'][] = array($timestamp*1000, round(array_sum($monthlyValues) / count($monthlyValues), 2));
+            $entry = array(
+                'timestamp' => $timestamp*1000,
+                'average'   => $rateEntry['rate'],
+                'open'      => (int)reset($dailyValues),
+                'high'      => (int)max($dailyValues),
+                'low'       => (int)min($dailyValues),
+                'close'     => (int)end($dailyValues),
+            );
+            $entry = array(
+                'timestamp' => $timestamp*1000,
+                'average'   => $rateEntry['rate'],
+                'open'      => $rateEntry['rate'],
+                'high'      => $rateEntry['rate'],
+                'low'       => $rateEntry['rate'],
+                'close'     => $rateEntry['rate'],
+            );
+
+            $data['daily'][]   = array_values($entry);
         }
 
         return $data;

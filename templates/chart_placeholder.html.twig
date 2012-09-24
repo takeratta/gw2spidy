@@ -37,7 +37,17 @@ var formatGW2Money = function(copper) {
 $(function() {
     Highcharts.setOptions({global: { useUTC: false }});
 
+    var groupingUnits = [['hour', [1]], [ 'day', [1]]];
+
     $.getJSON('{{ url }}', function(data) {
+        $.each(data, function(k, v) {
+            v['type'] = 'candlestick';
+            v['dataGrouping'] = { units: groupingUnits };
+
+            data[k] = v;
+            console.log(v);
+        });
+
         // Create the chart
         var chart = new Highcharts.StockChart({
             chart : {
@@ -49,6 +59,8 @@ $(function() {
                 enabled: false
             },
             tooltip: {
+                /*
+                 formatter is making a mess out of our candlesticks ;)
                 formatter: function() {
                     var pThis = this,
     				items     = pThis.points || splat(pThis),
@@ -69,6 +81,7 @@ $(function() {
 
         			return s.join('');
                 }
+                */
             },
             legend : {
                 enabled: {{ hideLegend ? 'false' : 'true' }},
