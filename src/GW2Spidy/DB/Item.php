@@ -39,13 +39,13 @@ class Item extends BaseItem {
     }
 
     public function getMargin() {
-    	$margin = intval($this->getMinSaleUnitPrice() * 0.85 - $this->getMaxOfferUnitPrice());
+        if($this->getMaxOfferUnitPrice() == 0 || $this->getMinSaleUnitPrice() == 0) {
+            return 0;
+        }
 
-    	if($this->getMaxOfferUnitPrice() == 0 || $this->getMinSaleUnitPrice() == 0) {
-    		$margin = 0;
-    	}
+    	$margin = $this->getMinSaleUnitPrice() * 0.85 - $this->getMaxOfferUnitPrice();
 
-    	return $margin > 0 ? round((($margin / $this->getMinSaleUnitPrice()) * 100), 2) : 0;
+    	return $margin > 0 ? round((($margin / $this->getMaxOfferUnitPrice()) * 100), 2) : 0;
     }
 
 
