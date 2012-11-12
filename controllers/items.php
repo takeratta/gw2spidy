@@ -110,6 +110,7 @@ $app->get("/item/{dataId}", function($dataId) use ($app) {
  * ----------------------
  */
 $app->get("/chart/{dataId}", function($dataId) use ($app) {
+    $con  = \Propel::getConnection();
     $item = ItemQuery::create()->findPK($dataId);
 
     if (!$item) {
@@ -117,77 +118,78 @@ $app->get("/chart/{dataId}", function($dataId) use ($app) {
     }
 
     $chart = array();
+    $sellListing['price']  = array();
+    $sellListing['volume'] = array();
+    $buyListing['price']   = array();
+    $buyListing['volume']  = array();
+
+    $sql = "SELECT
+                id, UNIX_TIMESTAMP(listing_datetime) AS ts, unit_price AS unitPrice, listings, quantity
+            FROM [table]
+            WHERE item_id = {$dataId}
+            ORDER BY listing_datetime ASC";
+    $stmt = $con->prepare(str_replace('[table]', 'sell_listing', $sql));
+
+    $stmt->execute();
+    $listings = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+    foreach ($listings as $listing) {
+        $ts = $listing['ts'];
+
+        if (!$ts) {
+            continue;
+        }
+
+        $sellListing['price'][]  = array($ts * 1000, intval($listing['unitPrice']));
+        $sellListing['volume'][] = array($ts * 1000, intval($listing['quantity']));
+    }
+
+    $stmt = $con->prepare(str_replace('[table]', 'buy_listing', $sql));
+
+    $stmt->execute();
+    $listings = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+    foreach ($listings as $listing) {
+        $ts = $listing['ts'];
+
+        $buyListing['price'][]  = array($ts * 1000, intval($listing['unitPrice']));
+        $buyListing['volume'][] = array($ts * 1000, intval($listing['quantity']));
+    }
 
     /*----------------
      *  SELL LISTINGS
     *----------------*/
-    $sellListings = DatasetManager::getInstance()->getItemDataset($item, ItemDataset::TYPE_SELL_LISTING);
-    $sellListingsVolume = DatasetManager::getInstance()->getItemVolumeDataset($item, ItemVolumeDataset::TYPE_SELL_LISTING);
     $chart[] = array(
-        'data'     => $sellListings->getNoMvAvgDataForChart(),
+        'data'     => $sellListing['price'],
         'name'     => "Sell Listings Raw Data",
         'visible'  => true,
         'gw2money' => true,
     );
     $chart[] = array(
-        'data'     => $sellListings->getDailyMvAvgDataForChart(),
-        'name'     => "Sell Listings 1 Day Mv Avg",
+        'data'     => $sellListing['volume'],
+        'name'     => "Sell Listings Volume",
         'visible'  => true,
-        'gw2money' => true,
-    );
-    $chart[] = array(
-        'data'     => $sellListingsVolume->getNoMvAvgDataForChart(),
-    	'name'    => "Sell Listings Volume",
-    	'visible' => false,
-        'yAxis'   => 1,
+        'gw2money' => false,
         'type'    => 'column',
+        'yAxis'    => 1,
     );
 
     /*----------------
      *  BUY LISTINGS
      *----------------*/
-    $buyListings = DatasetManager::getInstance()->getItemDataset($item, ItemDataset::TYPE_BUY_LISTING);
-    $buyListingsVolume = DatasetManager::getInstance()->getItemVolumeDataset($item, ItemVolumeDataset::TYPE_BUY_LISTING);
     $chart[] = array(
-        'data'     => $buyListings->getNoMvAvgDataForChart(),
+        'data'     => $sellListing['price'],
         'name'     => "Buy Listings Raw Data",
     	'visible'  => true,
         'gw2money' => true,
     );
     $chart[] = array(
-        'data'     => $buyListings->getDailyMvAvgDataForChart(),
-    	'name'     => "Buy Listings 1 Day Mv Avg",
-    	'visible'  => true,
-        'gw2money' => true,
-    );
-    $chart[] = array(
-        'data'     => $buyListingsVolume->getNoMvAvgDataForChart(),
-    	'name'    => "Buy Listings Volume",
-    	'visible' => false,
-        'yAxis'   => 1,
+        'data'     => $sellListing['volume'],
+        'name'     => "Buy Listings Volume",
+        'visible'  => true,
+        'gw2money' => false,
         'type'    => 'column',
-    );
-
-    /*---------------
-     *  MV AVG VOLUME SELL
-     *---------------*/
-    $chart[] = array(
-        'data'     => $sellListingsVolume->getDailyMvAvgDataForChart(),
-    	'name'    => "Sell Listings Volume 1 Day Mv Avg",
-    	'visible' => true,
-        'yAxis'   => 1,
-        'type'    => 'column',
-    );
-
-    /*---------------
-     *  MV AVG VOLUME BUY
-     *---------------*/
-    $chart[] = array(
-        'data'     => $buyListingsVolume->getDailyMvAvgDataForChart(),
-    	'name'    => "Buy Listings Volume 1 Day Mv Avg",
-    	'visible' => true,
-        'yAxis'   => 1,
-        'type'    => 'column',
+        'yAxis'    => 1,
     );
 
     $content = json_encode($chart);
