@@ -65,7 +65,9 @@ class APIHelperService {
     public function outputResponseJSON(Request $request, $response) {
         $json = json_encode($response);
 
-        return ($jsonp = $request->get('jsonp')) ? "{$jsonp}({$json})" : $json;
+        $jsonp = $request->get('jsonp') || $request->get('callback');
+
+        return $jsonp ? "{$jsonp}({$json})" : $json;
     }
 
     public function buildItemDataArray(array $item) {
