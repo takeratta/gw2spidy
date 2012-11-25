@@ -46,22 +46,36 @@ $app->get("/search/{search}/{page}", function(Request $request, $search, $page) 
         return $app->handle(Request::create("/searchform", 'GET'), HttpKernelInterface::SUB_REQUEST);
     }
 
+    $con = \Propel::getConnection();
+
     $recipes = (bool)$request->get('recipes', false);
     $page = $page > 0 ? $page : 1;
 
-    $q = $recipes ? RecipeQuery::create() : ItemQuery::create();
-
-    $q->filterByName("%{$search}%");
-
-    if ($q->count() == 0 && $search != trim($search)) {
-        $search = trim($search);
-        $q = $recipes ? RecipeQuery::create() : ItemQuery::create();
-        $q->filterByName("%{$search}%");
+    if ($recipes) {
+        $table = "recipe";
+        $route = "recipe";
+        $q = RecipeQuery::create();
+    } else {
+        $table = "item";
+        $route = "item";
+        $q = ItemQuery::create();
     }
 
+    $quoted = $con->quote($search);
+    $q->withColumn("match(name, tp_name) AGAINST ({$quoted})", "relevance");
+    $q->orderBy("relevance", \Criteria::DESC);
+
+    $stmt = $con->prepare("SELECT MAX(MATCH(name, tp_name) AGAINST ({$quoted})) as max FROM {$table}");
+    $stmt->execute();
+    $max = $stmt->fetch(\PDO::FETCH_ASSOC);
+    $max = $max['max'];
+    $thres = $max * 0.9;
+
+    $q->where("match(name, tp_name) AGAINST ({$quoted}) > {$thres}");
+
     if ($page == 1 && $q->count() == 1) {
-        $item = $q->findOne();
-        return $app->redirect($app['url_generator']->generate($recipes ? 'recipe' : 'item', array('dataId' => $item->getDataId())));
+        $onlyOne = $q->findOne();
+        return $app->redirect($app['url_generator']->generate($route, array('dataId' => $onlyOne->getDataId())));
     }
 
     if ($recipes) {

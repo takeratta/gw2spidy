@@ -44,6 +44,7 @@ CREATE TABLE `item`
 (
     `data_id` INTEGER NOT NULL,
     `type_id` INTEGER NOT NULL,
+    `tp_name` VARCHAR(255) NOT NULL,
     `name` VARCHAR(255) NOT NULL,
     `gem_store_description` VARCHAR(255) NOT NULL,
     `gem_store_blurb` VARCHAR(255) NOT NULL,

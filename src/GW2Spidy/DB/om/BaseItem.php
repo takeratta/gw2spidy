@@ -78,6 +78,12 @@ abstract class BaseItem extends BaseObject implements Persistent
     protected $type_id;
 
     /**
+     * The value for the tp_name field.
+     * @var        string
+     */
+    protected $tp_name;
+
+    /**
      * The value for the name field.
      * @var        string
      */
@@ -357,6 +363,17 @@ abstract class BaseItem extends BaseObject implements Persistent
     {
 
         return $this->type_id;
+    }
+
+    /**
+     * Get the [tp_name] column value.
+     * 
+     * @return   string
+     */
+    public function getTpName()
+    {
+
+        return $this->tp_name;
     }
 
     /**
@@ -658,6 +675,27 @@ abstract class BaseItem extends BaseObject implements Persistent
 
         return $this;
     } // setTypeId()
+
+    /**
+     * Set the value of [tp_name] column.
+     * 
+     * @param      string $v new value
+     * @return   Item The current object (for fluent API support)
+     */
+    public function setTpName($v)
+    {
+        if ($v !== null) {
+            $v = (string) $v;
+        }
+
+        if ($this->tp_name !== $v) {
+            $this->tp_name = $v;
+            $this->modifiedColumns[] = ItemPeer::TP_NAME;
+        }
+
+
+        return $this;
+    } // setTpName()
 
     /**
      * Set the value of [name] column.
@@ -1160,27 +1198,28 @@ abstract class BaseItem extends BaseObject implements Persistent
 
             $this->data_id = ($row[$startcol + 0] !== null) ? (int) $row[$startcol + 0] : null;
             $this->type_id = ($row[$startcol + 1] !== null) ? (int) $row[$startcol + 1] : null;
-            $this->name = ($row[$startcol + 2] !== null) ? (string) $row[$startcol + 2] : null;
-            $this->gem_store_description = ($row[$startcol + 3] !== null) ? (string) $row[$startcol + 3] : null;
-            $this->gem_store_blurb = ($row[$startcol + 4] !== null) ? (string) $row[$startcol + 4] : null;
-            $this->restriction_level = ($row[$startcol + 5] !== null) ? (int) $row[$startcol + 5] : null;
-            $this->rarity = ($row[$startcol + 6] !== null) ? (int) $row[$startcol + 6] : null;
-            $this->vendor_sell_price = ($row[$startcol + 7] !== null) ? (int) $row[$startcol + 7] : null;
-            $this->vendor_price = ($row[$startcol + 8] !== null) ? (int) $row[$startcol + 8] : null;
-            $this->karma_price = ($row[$startcol + 9] !== null) ? (int) $row[$startcol + 9] : null;
-            $this->img = ($row[$startcol + 10] !== null) ? (string) $row[$startcol + 10] : null;
-            $this->rarity_word = ($row[$startcol + 11] !== null) ? (string) $row[$startcol + 11] : null;
-            $this->item_type_id = ($row[$startcol + 12] !== null) ? (int) $row[$startcol + 12] : null;
-            $this->item_sub_type_id = ($row[$startcol + 13] !== null) ? (int) $row[$startcol + 13] : null;
-            $this->max_offer_unit_price = ($row[$startcol + 14] !== null) ? (int) $row[$startcol + 14] : null;
-            $this->min_sale_unit_price = ($row[$startcol + 15] !== null) ? (int) $row[$startcol + 15] : null;
-            $this->offer_availability = ($row[$startcol + 16] !== null) ? (int) $row[$startcol + 16] : null;
-            $this->sale_availability = ($row[$startcol + 17] !== null) ? (int) $row[$startcol + 17] : null;
-            $this->gw2db_id = ($row[$startcol + 18] !== null) ? (int) $row[$startcol + 18] : null;
-            $this->gw2db_external_id = ($row[$startcol + 19] !== null) ? (int) $row[$startcol + 19] : null;
-            $this->last_price_changed = ($row[$startcol + 20] !== null) ? (string) $row[$startcol + 20] : null;
-            $this->sale_price_change_last_hour = ($row[$startcol + 21] !== null) ? (int) $row[$startcol + 21] : null;
-            $this->offer_price_change_last_hour = ($row[$startcol + 22] !== null) ? (int) $row[$startcol + 22] : null;
+            $this->tp_name = ($row[$startcol + 2] !== null) ? (string) $row[$startcol + 2] : null;
+            $this->name = ($row[$startcol + 3] !== null) ? (string) $row[$startcol + 3] : null;
+            $this->gem_store_description = ($row[$startcol + 4] !== null) ? (string) $row[$startcol + 4] : null;
+            $this->gem_store_blurb = ($row[$startcol + 5] !== null) ? (string) $row[$startcol + 5] : null;
+            $this->restriction_level = ($row[$startcol + 6] !== null) ? (int) $row[$startcol + 6] : null;
+            $this->rarity = ($row[$startcol + 7] !== null) ? (int) $row[$startcol + 7] : null;
+            $this->vendor_sell_price = ($row[$startcol + 8] !== null) ? (int) $row[$startcol + 8] : null;
+            $this->vendor_price = ($row[$startcol + 9] !== null) ? (int) $row[$startcol + 9] : null;
+            $this->karma_price = ($row[$startcol + 10] !== null) ? (int) $row[$startcol + 10] : null;
+            $this->img = ($row[$startcol + 11] !== null) ? (string) $row[$startcol + 11] : null;
+            $this->rarity_word = ($row[$startcol + 12] !== null) ? (string) $row[$startcol + 12] : null;
+            $this->item_type_id = ($row[$startcol + 13] !== null) ? (int) $row[$startcol + 13] : null;
+            $this->item_sub_type_id = ($row[$startcol + 14] !== null) ? (int) $row[$startcol + 14] : null;
+            $this->max_offer_unit_price = ($row[$startcol + 15] !== null) ? (int) $row[$startcol + 15] : null;
+            $this->min_sale_unit_price = ($row[$startcol + 16] !== null) ? (int) $row[$startcol + 16] : null;
+            $this->offer_availability = ($row[$startcol + 17] !== null) ? (int) $row[$startcol + 17] : null;
+            $this->sale_availability = ($row[$startcol + 18] !== null) ? (int) $row[$startcol + 18] : null;
+            $this->gw2db_id = ($row[$startcol + 19] !== null) ? (int) $row[$startcol + 19] : null;
+            $this->gw2db_external_id = ($row[$startcol + 20] !== null) ? (int) $row[$startcol + 20] : null;
+            $this->last_price_changed = ($row[$startcol + 21] !== null) ? (string) $row[$startcol + 21] : null;
+            $this->sale_price_change_last_hour = ($row[$startcol + 22] !== null) ? (int) $row[$startcol + 22] : null;
+            $this->offer_price_change_last_hour = ($row[$startcol + 23] !== null) ? (int) $row[$startcol + 23] : null;
             $this->resetModified();
 
             $this->setNew(false);
@@ -1189,7 +1228,7 @@ abstract class BaseItem extends BaseObject implements Persistent
                 $this->ensureConsistency();
             }
 
-            return $startcol + 23; // 23 = ItemPeer::NUM_HYDRATE_COLUMNS.
+            return $startcol + 24; // 24 = ItemPeer::NUM_HYDRATE_COLUMNS.
 
         } catch (Exception $e) {
             throw new PropelException("Error populating Item object", $e);
@@ -1568,6 +1607,9 @@ abstract class BaseItem extends BaseObject implements Persistent
         if ($this->isColumnModified(ItemPeer::TYPE_ID)) {
             $modifiedColumns[':p' . $index++]  = '`TYPE_ID`';
         }
+        if ($this->isColumnModified(ItemPeer::TP_NAME)) {
+            $modifiedColumns[':p' . $index++]  = '`TP_NAME`';
+        }
         if ($this->isColumnModified(ItemPeer::NAME)) {
             $modifiedColumns[':p' . $index++]  = '`NAME`';
         }
@@ -1647,6 +1689,9 @@ abstract class BaseItem extends BaseObject implements Persistent
                         break;
                     case '`TYPE_ID`':
 						$stmt->bindValue($identifier, $this->type_id, PDO::PARAM_INT);
+                        break;
+                    case '`TP_NAME`':
+						$stmt->bindValue($identifier, $this->tp_name, PDO::PARAM_STR);
                         break;
                     case '`NAME`':
 						$stmt->bindValue($identifier, $this->name, PDO::PARAM_STR);
@@ -1903,66 +1948,69 @@ abstract class BaseItem extends BaseObject implements Persistent
                 return $this->getTypeId();
                 break;
             case 2:
-                return $this->getName();
+                return $this->getTpName();
                 break;
             case 3:
-                return $this->getGemStoreDescription();
+                return $this->getName();
                 break;
             case 4:
-                return $this->getGemStoreBlurb();
+                return $this->getGemStoreDescription();
                 break;
             case 5:
-                return $this->getRestrictionLevel();
+                return $this->getGemStoreBlurb();
                 break;
             case 6:
-                return $this->getRarity();
+                return $this->getRestrictionLevel();
                 break;
             case 7:
-                return $this->getVendorSellPrice();
+                return $this->getRarity();
                 break;
             case 8:
-                return $this->getVendorPrice();
+                return $this->getVendorSellPrice();
                 break;
             case 9:
-                return $this->getKarmaPrice();
+                return $this->getVendorPrice();
                 break;
             case 10:
-                return $this->getImg();
+                return $this->getKarmaPrice();
                 break;
             case 11:
-                return $this->getRarityWord();
+                return $this->getImg();
                 break;
             case 12:
-                return $this->getItemTypeId();
+                return $this->getRarityWord();
                 break;
             case 13:
-                return $this->getItemSubTypeId();
+                return $this->getItemTypeId();
                 break;
             case 14:
-                return $this->getMaxOfferUnitPrice();
+                return $this->getItemSubTypeId();
                 break;
             case 15:
-                return $this->getMinSaleUnitPrice();
+                return $this->getMaxOfferUnitPrice();
                 break;
             case 16:
-                return $this->getOfferAvailability();
+                return $this->getMinSaleUnitPrice();
                 break;
             case 17:
-                return $this->getSaleAvailability();
+                return $this->getOfferAvailability();
                 break;
             case 18:
-                return $this->getGw2dbId();
+                return $this->getSaleAvailability();
                 break;
             case 19:
-                return $this->getGw2dbExternalId();
+                return $this->getGw2dbId();
                 break;
             case 20:
-                return $this->getLastPriceChanged();
+                return $this->getGw2dbExternalId();
                 break;
             case 21:
-                return $this->getSalePriceChangeLastHour();
+                return $this->getLastPriceChanged();
                 break;
             case 22:
+                return $this->getSalePriceChangeLastHour();
+                break;
+            case 23:
                 return $this->getOfferPriceChangeLastHour();
                 break;
             default:
@@ -1996,27 +2044,28 @@ abstract class BaseItem extends BaseObject implements Persistent
         $result = array(
             $keys[0] => $this->getDataId(),
             $keys[1] => $this->getTypeId(),
-            $keys[2] => $this->getName(),
-            $keys[3] => $this->getGemStoreDescription(),
-            $keys[4] => $this->getGemStoreBlurb(),
-            $keys[5] => $this->getRestrictionLevel(),
-            $keys[6] => $this->getRarity(),
-            $keys[7] => $this->getVendorSellPrice(),
-            $keys[8] => $this->getVendorPrice(),
-            $keys[9] => $this->getKarmaPrice(),
-            $keys[10] => $this->getImg(),
-            $keys[11] => $this->getRarityWord(),
-            $keys[12] => $this->getItemTypeId(),
-            $keys[13] => $this->getItemSubTypeId(),
-            $keys[14] => $this->getMaxOfferUnitPrice(),
-            $keys[15] => $this->getMinSaleUnitPrice(),
-            $keys[16] => $this->getOfferAvailability(),
-            $keys[17] => $this->getSaleAvailability(),
-            $keys[18] => $this->getGw2dbId(),
-            $keys[19] => $this->getGw2dbExternalId(),
-            $keys[20] => $this->getLastPriceChanged(),
-            $keys[21] => $this->getSalePriceChangeLastHour(),
-            $keys[22] => $this->getOfferPriceChangeLastHour(),
+            $keys[2] => $this->getTpName(),
+            $keys[3] => $this->getName(),
+            $keys[4] => $this->getGemStoreDescription(),
+            $keys[5] => $this->getGemStoreBlurb(),
+            $keys[6] => $this->getRestrictionLevel(),
+            $keys[7] => $this->getRarity(),
+            $keys[8] => $this->getVendorSellPrice(),
+            $keys[9] => $this->getVendorPrice(),
+            $keys[10] => $this->getKarmaPrice(),
+            $keys[11] => $this->getImg(),
+            $keys[12] => $this->getRarityWord(),
+            $keys[13] => $this->getItemTypeId(),
+            $keys[14] => $this->getItemSubTypeId(),
+            $keys[15] => $this->getMaxOfferUnitPrice(),
+            $keys[16] => $this->getMinSaleUnitPrice(),
+            $keys[17] => $this->getOfferAvailability(),
+            $keys[18] => $this->getSaleAvailability(),
+            $keys[19] => $this->getGw2dbId(),
+            $keys[20] => $this->getGw2dbExternalId(),
+            $keys[21] => $this->getLastPriceChanged(),
+            $keys[22] => $this->getSalePriceChangeLastHour(),
+            $keys[23] => $this->getOfferPriceChangeLastHour(),
         );
         if ($includeForeignObjects) {
             if (null !== $this->aItemType) {
@@ -2081,66 +2130,69 @@ abstract class BaseItem extends BaseObject implements Persistent
                 $this->setTypeId($value);
                 break;
             case 2:
-                $this->setName($value);
+                $this->setTpName($value);
                 break;
             case 3:
-                $this->setGemStoreDescription($value);
+                $this->setName($value);
                 break;
             case 4:
-                $this->setGemStoreBlurb($value);
+                $this->setGemStoreDescription($value);
                 break;
             case 5:
-                $this->setRestrictionLevel($value);
+                $this->setGemStoreBlurb($value);
                 break;
             case 6:
-                $this->setRarity($value);
+                $this->setRestrictionLevel($value);
                 break;
             case 7:
-                $this->setVendorSellPrice($value);
+                $this->setRarity($value);
                 break;
             case 8:
-                $this->setVendorPrice($value);
+                $this->setVendorSellPrice($value);
                 break;
             case 9:
-                $this->setKarmaPrice($value);
+                $this->setVendorPrice($value);
                 break;
             case 10:
-                $this->setImg($value);
+                $this->setKarmaPrice($value);
                 break;
             case 11:
-                $this->setRarityWord($value);
+                $this->setImg($value);
                 break;
             case 12:
-                $this->setItemTypeId($value);
+                $this->setRarityWord($value);
                 break;
             case 13:
-                $this->setItemSubTypeId($value);
+                $this->setItemTypeId($value);
                 break;
             case 14:
-                $this->setMaxOfferUnitPrice($value);
+                $this->setItemSubTypeId($value);
                 break;
             case 15:
-                $this->setMinSaleUnitPrice($value);
+                $this->setMaxOfferUnitPrice($value);
                 break;
             case 16:
-                $this->setOfferAvailability($value);
+                $this->setMinSaleUnitPrice($value);
                 break;
             case 17:
-                $this->setSaleAvailability($value);
+                $this->setOfferAvailability($value);
                 break;
             case 18:
-                $this->setGw2dbId($value);
+                $this->setSaleAvailability($value);
                 break;
             case 19:
-                $this->setGw2dbExternalId($value);
+                $this->setGw2dbId($value);
                 break;
             case 20:
-                $this->setLastPriceChanged($value);
+                $this->setGw2dbExternalId($value);
                 break;
             case 21:
-                $this->setSalePriceChangeLastHour($value);
+                $this->setLastPriceChanged($value);
                 break;
             case 22:
+                $this->setSalePriceChangeLastHour($value);
+                break;
+            case 23:
                 $this->setOfferPriceChangeLastHour($value);
                 break;
         } // switch()
@@ -2169,27 +2221,28 @@ abstract class BaseItem extends BaseObject implements Persistent
 
         if (array_key_exists($keys[0], $arr)) $this->setDataId($arr[$keys[0]]);
         if (array_key_exists($keys[1], $arr)) $this->setTypeId($arr[$keys[1]]);
-        if (array_key_exists($keys[2], $arr)) $this->setName($arr[$keys[2]]);
-        if (array_key_exists($keys[3], $arr)) $this->setGemStoreDescription($arr[$keys[3]]);
-        if (array_key_exists($keys[4], $arr)) $this->setGemStoreBlurb($arr[$keys[4]]);
-        if (array_key_exists($keys[5], $arr)) $this->setRestrictionLevel($arr[$keys[5]]);
-        if (array_key_exists($keys[6], $arr)) $this->setRarity($arr[$keys[6]]);
-        if (array_key_exists($keys[7], $arr)) $this->setVendorSellPrice($arr[$keys[7]]);
-        if (array_key_exists($keys[8], $arr)) $this->setVendorPrice($arr[$keys[8]]);
-        if (array_key_exists($keys[9], $arr)) $this->setKarmaPrice($arr[$keys[9]]);
-        if (array_key_exists($keys[10], $arr)) $this->setImg($arr[$keys[10]]);
-        if (array_key_exists($keys[11], $arr)) $this->setRarityWord($arr[$keys[11]]);
-        if (array_key_exists($keys[12], $arr)) $this->setItemTypeId($arr[$keys[12]]);
-        if (array_key_exists($keys[13], $arr)) $this->setItemSubTypeId($arr[$keys[13]]);
-        if (array_key_exists($keys[14], $arr)) $this->setMaxOfferUnitPrice($arr[$keys[14]]);
-        if (array_key_exists($keys[15], $arr)) $this->setMinSaleUnitPrice($arr[$keys[15]]);
-        if (array_key_exists($keys[16], $arr)) $this->setOfferAvailability($arr[$keys[16]]);
-        if (array_key_exists($keys[17], $arr)) $this->setSaleAvailability($arr[$keys[17]]);
-        if (array_key_exists($keys[18], $arr)) $this->setGw2dbId($arr[$keys[18]]);
-        if (array_key_exists($keys[19], $arr)) $this->setGw2dbExternalId($arr[$keys[19]]);
-        if (array_key_exists($keys[20], $arr)) $this->setLastPriceChanged($arr[$keys[20]]);
-        if (array_key_exists($keys[21], $arr)) $this->setSalePriceChangeLastHour($arr[$keys[21]]);
-        if (array_key_exists($keys[22], $arr)) $this->setOfferPriceChangeLastHour($arr[$keys[22]]);
+        if (array_key_exists($keys[2], $arr)) $this->setTpName($arr[$keys[2]]);
+        if (array_key_exists($keys[3], $arr)) $this->setName($arr[$keys[3]]);
+        if (array_key_exists($keys[4], $arr)) $this->setGemStoreDescription($arr[$keys[4]]);
+        if (array_key_exists($keys[5], $arr)) $this->setGemStoreBlurb($arr[$keys[5]]);
+        if (array_key_exists($keys[6], $arr)) $this->setRestrictionLevel($arr[$keys[6]]);
+        if (array_key_exists($keys[7], $arr)) $this->setRarity($arr[$keys[7]]);
+        if (array_key_exists($keys[8], $arr)) $this->setVendorSellPrice($arr[$keys[8]]);
+        if (array_key_exists($keys[9], $arr)) $this->setVendorPrice($arr[$keys[9]]);
+        if (array_key_exists($keys[10], $arr)) $this->setKarmaPrice($arr[$keys[10]]);
+        if (array_key_exists($keys[11], $arr)) $this->setImg($arr[$keys[11]]);
+        if (array_key_exists($keys[12], $arr)) $this->setRarityWord($arr[$keys[12]]);
+        if (array_key_exists($keys[13], $arr)) $this->setItemTypeId($arr[$keys[13]]);
+        if (array_key_exists($keys[14], $arr)) $this->setItemSubTypeId($arr[$keys[14]]);
+        if (array_key_exists($keys[15], $arr)) $this->setMaxOfferUnitPrice($arr[$keys[15]]);
+        if (array_key_exists($keys[16], $arr)) $this->setMinSaleUnitPrice($arr[$keys[16]]);
+        if (array_key_exists($keys[17], $arr)) $this->setOfferAvailability($arr[$keys[17]]);
+        if (array_key_exists($keys[18], $arr)) $this->setSaleAvailability($arr[$keys[18]]);
+        if (array_key_exists($keys[19], $arr)) $this->setGw2dbId($arr[$keys[19]]);
+        if (array_key_exists($keys[20], $arr)) $this->setGw2dbExternalId($arr[$keys[20]]);
+        if (array_key_exists($keys[21], $arr)) $this->setLastPriceChanged($arr[$keys[21]]);
+        if (array_key_exists($keys[22], $arr)) $this->setSalePriceChangeLastHour($arr[$keys[22]]);
+        if (array_key_exists($keys[23], $arr)) $this->setOfferPriceChangeLastHour($arr[$keys[23]]);
     }
 
     /**
@@ -2203,6 +2256,7 @@ abstract class BaseItem extends BaseObject implements Persistent
 
         if ($this->isColumnModified(ItemPeer::DATA_ID)) $criteria->add(ItemPeer::DATA_ID, $this->data_id);
         if ($this->isColumnModified(ItemPeer::TYPE_ID)) $criteria->add(ItemPeer::TYPE_ID, $this->type_id);
+        if ($this->isColumnModified(ItemPeer::TP_NAME)) $criteria->add(ItemPeer::TP_NAME, $this->tp_name);
         if ($this->isColumnModified(ItemPeer::NAME)) $criteria->add(ItemPeer::NAME, $this->name);
         if ($this->isColumnModified(ItemPeer::GEM_STORE_DESCRIPTION)) $criteria->add(ItemPeer::GEM_STORE_DESCRIPTION, $this->gem_store_description);
         if ($this->isColumnModified(ItemPeer::GEM_STORE_BLURB)) $criteria->add(ItemPeer::GEM_STORE_BLURB, $this->gem_store_blurb);
@@ -2288,6 +2342,7 @@ abstract class BaseItem extends BaseObject implements Persistent
     public function copyInto($copyObj, $deepCopy = false, $makeNew = true)
     {
         $copyObj->setTypeId($this->getTypeId());
+        $copyObj->setTpName($this->getTpName());
         $copyObj->setName($this->getName());
         $copyObj->setGemStoreDescription($this->getGemStoreDescription());
         $copyObj->setGemStoreBlurb($this->getGemStoreBlurb());
@@ -3982,6 +4037,7 @@ abstract class BaseItem extends BaseObject implements Persistent
     {
         $this->data_id = null;
         $this->type_id = null;
+        $this->tp_name = null;
         $this->name = null;
         $this->gem_store_description = null;
         $this->gem_store_blurb = null;
