@@ -112,10 +112,22 @@ abstract class BaseRecipe extends BaseObject implements Persistent
     protected $sell_price;
 
     /**
+     * The value for the buy_price field.
+     * @var        int
+     */
+    protected $buy_price;
+
+    /**
      * The value for the profit field.
      * @var        int
      */
     protected $profit;
+
+    /**
+     * The value for the buy_profit field.
+     * @var        int
+     */
+    protected $buy_profit;
 
     /**
      * The value for the updated field.
@@ -300,6 +312,17 @@ abstract class BaseRecipe extends BaseObject implements Persistent
     }
 
     /**
+     * Get the [buy_price] column value.
+     * 
+     * @return   int
+     */
+    public function getBuyPrice()
+    {
+
+        return $this->buy_price;
+    }
+
+    /**
      * Get the [profit] column value.
      * 
      * @return   int
@@ -308,6 +331,17 @@ abstract class BaseRecipe extends BaseObject implements Persistent
     {
 
         return $this->profit;
+    }
+
+    /**
+     * Get the [buy_profit] column value.
+     * 
+     * @return   int
+     */
+    public function getBuyProfit()
+    {
+
+        return $this->buy_profit;
     }
 
     /**
@@ -557,6 +591,27 @@ abstract class BaseRecipe extends BaseObject implements Persistent
     } // setSellPrice()
 
     /**
+     * Set the value of [buy_price] column.
+     * 
+     * @param      int $v new value
+     * @return   Recipe The current object (for fluent API support)
+     */
+    public function setBuyPrice($v)
+    {
+        if ($v !== null) {
+            $v = (int) $v;
+        }
+
+        if ($this->buy_price !== $v) {
+            $this->buy_price = $v;
+            $this->modifiedColumns[] = RecipePeer::BUY_PRICE;
+        }
+
+
+        return $this;
+    } // setBuyPrice()
+
+    /**
      * Set the value of [profit] column.
      * 
      * @param      int $v new value
@@ -576,6 +631,27 @@ abstract class BaseRecipe extends BaseObject implements Persistent
 
         return $this;
     } // setProfit()
+
+    /**
+     * Set the value of [buy_profit] column.
+     * 
+     * @param      int $v new value
+     * @return   Recipe The current object (for fluent API support)
+     */
+    public function setBuyProfit($v)
+    {
+        if ($v !== null) {
+            $v = (int) $v;
+        }
+
+        if ($this->buy_profit !== $v) {
+            $this->buy_profit = $v;
+            $this->modifiedColumns[] = RecipePeer::BUY_PROFIT;
+        }
+
+
+        return $this;
+    } // setBuyProfit()
 
     /**
      * Sets the value of [updated] column to a normalized version of the date/time value specified.
@@ -674,9 +750,11 @@ abstract class BaseRecipe extends BaseObject implements Persistent
             $this->cost = ($row[$startcol + 6] !== null) ? (int) $row[$startcol + 6] : null;
             $this->karma_cost = ($row[$startcol + 7] !== null) ? (int) $row[$startcol + 7] : null;
             $this->sell_price = ($row[$startcol + 8] !== null) ? (int) $row[$startcol + 8] : null;
-            $this->profit = ($row[$startcol + 9] !== null) ? (int) $row[$startcol + 9] : null;
-            $this->updated = ($row[$startcol + 10] !== null) ? (string) $row[$startcol + 10] : null;
-            $this->requires_unlock = ($row[$startcol + 11] !== null) ? (int) $row[$startcol + 11] : null;
+            $this->buy_price = ($row[$startcol + 9] !== null) ? (int) $row[$startcol + 9] : null;
+            $this->profit = ($row[$startcol + 10] !== null) ? (int) $row[$startcol + 10] : null;
+            $this->buy_profit = ($row[$startcol + 11] !== null) ? (int) $row[$startcol + 11] : null;
+            $this->updated = ($row[$startcol + 12] !== null) ? (string) $row[$startcol + 12] : null;
+            $this->requires_unlock = ($row[$startcol + 13] !== null) ? (int) $row[$startcol + 13] : null;
             $this->resetModified();
 
             $this->setNew(false);
@@ -685,7 +763,7 @@ abstract class BaseRecipe extends BaseObject implements Persistent
                 $this->ensureConsistency();
             }
 
-            return $startcol + 12; // 12 = RecipePeer::NUM_HYDRATE_COLUMNS.
+            return $startcol + 14; // 14 = RecipePeer::NUM_HYDRATE_COLUMNS.
 
         } catch (Exception $e) {
             throw new PropelException("Error populating Recipe object", $e);
@@ -987,8 +1065,14 @@ abstract class BaseRecipe extends BaseObject implements Persistent
         if ($this->isColumnModified(RecipePeer::SELL_PRICE)) {
             $modifiedColumns[':p' . $index++]  = '`SELL_PRICE`';
         }
+        if ($this->isColumnModified(RecipePeer::BUY_PRICE)) {
+            $modifiedColumns[':p' . $index++]  = '`BUY_PRICE`';
+        }
         if ($this->isColumnModified(RecipePeer::PROFIT)) {
             $modifiedColumns[':p' . $index++]  = '`PROFIT`';
+        }
+        if ($this->isColumnModified(RecipePeer::BUY_PROFIT)) {
+            $modifiedColumns[':p' . $index++]  = '`BUY_PROFIT`';
         }
         if ($this->isColumnModified(RecipePeer::UPDATED)) {
             $modifiedColumns[':p' . $index++]  = '`UPDATED`';
@@ -1034,8 +1118,14 @@ abstract class BaseRecipe extends BaseObject implements Persistent
                     case '`SELL_PRICE`':
 						$stmt->bindValue($identifier, $this->sell_price, PDO::PARAM_INT);
                         break;
+                    case '`BUY_PRICE`':
+						$stmt->bindValue($identifier, $this->buy_price, PDO::PARAM_INT);
+                        break;
                     case '`PROFIT`':
 						$stmt->bindValue($identifier, $this->profit, PDO::PARAM_INT);
+                        break;
+                    case '`BUY_PROFIT`':
+						$stmt->bindValue($identifier, $this->buy_profit, PDO::PARAM_INT);
                         break;
                     case '`UPDATED`':
 						$stmt->bindValue($identifier, $this->updated, PDO::PARAM_STR);
@@ -1224,12 +1314,18 @@ abstract class BaseRecipe extends BaseObject implements Persistent
                 return $this->getSellPrice();
                 break;
             case 9:
-                return $this->getProfit();
+                return $this->getBuyPrice();
                 break;
             case 10:
-                return $this->getUpdated();
+                return $this->getProfit();
                 break;
             case 11:
+                return $this->getBuyProfit();
+                break;
+            case 12:
+                return $this->getUpdated();
+                break;
+            case 13:
                 return $this->getRequiresUnlock();
                 break;
             default:
@@ -1270,9 +1366,11 @@ abstract class BaseRecipe extends BaseObject implements Persistent
             $keys[6] => $this->getCost(),
             $keys[7] => $this->getKarmaCost(),
             $keys[8] => $this->getSellPrice(),
-            $keys[9] => $this->getProfit(),
-            $keys[10] => $this->getUpdated(),
-            $keys[11] => $this->getRequiresUnlock(),
+            $keys[9] => $this->getBuyPrice(),
+            $keys[10] => $this->getProfit(),
+            $keys[11] => $this->getBuyProfit(),
+            $keys[12] => $this->getUpdated(),
+            $keys[13] => $this->getRequiresUnlock(),
         );
         if ($includeForeignObjects) {
             if (null !== $this->aDiscipline) {
@@ -1346,12 +1444,18 @@ abstract class BaseRecipe extends BaseObject implements Persistent
                 $this->setSellPrice($value);
                 break;
             case 9:
-                $this->setProfit($value);
+                $this->setBuyPrice($value);
                 break;
             case 10:
-                $this->setUpdated($value);
+                $this->setProfit($value);
                 break;
             case 11:
+                $this->setBuyProfit($value);
+                break;
+            case 12:
+                $this->setUpdated($value);
+                break;
+            case 13:
                 $this->setRequiresUnlock($value);
                 break;
         } // switch()
@@ -1387,9 +1491,11 @@ abstract class BaseRecipe extends BaseObject implements Persistent
         if (array_key_exists($keys[6], $arr)) $this->setCost($arr[$keys[6]]);
         if (array_key_exists($keys[7], $arr)) $this->setKarmaCost($arr[$keys[7]]);
         if (array_key_exists($keys[8], $arr)) $this->setSellPrice($arr[$keys[8]]);
-        if (array_key_exists($keys[9], $arr)) $this->setProfit($arr[$keys[9]]);
-        if (array_key_exists($keys[10], $arr)) $this->setUpdated($arr[$keys[10]]);
-        if (array_key_exists($keys[11], $arr)) $this->setRequiresUnlock($arr[$keys[11]]);
+        if (array_key_exists($keys[9], $arr)) $this->setBuyPrice($arr[$keys[9]]);
+        if (array_key_exists($keys[10], $arr)) $this->setProfit($arr[$keys[10]]);
+        if (array_key_exists($keys[11], $arr)) $this->setBuyProfit($arr[$keys[11]]);
+        if (array_key_exists($keys[12], $arr)) $this->setUpdated($arr[$keys[12]]);
+        if (array_key_exists($keys[13], $arr)) $this->setRequiresUnlock($arr[$keys[13]]);
     }
 
     /**
@@ -1410,7 +1516,9 @@ abstract class BaseRecipe extends BaseObject implements Persistent
         if ($this->isColumnModified(RecipePeer::COST)) $criteria->add(RecipePeer::COST, $this->cost);
         if ($this->isColumnModified(RecipePeer::KARMA_COST)) $criteria->add(RecipePeer::KARMA_COST, $this->karma_cost);
         if ($this->isColumnModified(RecipePeer::SELL_PRICE)) $criteria->add(RecipePeer::SELL_PRICE, $this->sell_price);
+        if ($this->isColumnModified(RecipePeer::BUY_PRICE)) $criteria->add(RecipePeer::BUY_PRICE, $this->buy_price);
         if ($this->isColumnModified(RecipePeer::PROFIT)) $criteria->add(RecipePeer::PROFIT, $this->profit);
+        if ($this->isColumnModified(RecipePeer::BUY_PROFIT)) $criteria->add(RecipePeer::BUY_PROFIT, $this->buy_profit);
         if ($this->isColumnModified(RecipePeer::UPDATED)) $criteria->add(RecipePeer::UPDATED, $this->updated);
         if ($this->isColumnModified(RecipePeer::REQUIRES_UNLOCK)) $criteria->add(RecipePeer::REQUIRES_UNLOCK, $this->requires_unlock);
 
@@ -1484,7 +1592,9 @@ abstract class BaseRecipe extends BaseObject implements Persistent
         $copyObj->setCost($this->getCost());
         $copyObj->setKarmaCost($this->getKarmaCost());
         $copyObj->setSellPrice($this->getSellPrice());
+        $copyObj->setBuyPrice($this->getBuyPrice());
         $copyObj->setProfit($this->getProfit());
+        $copyObj->setBuyProfit($this->getBuyProfit());
         $copyObj->setUpdated($this->getUpdated());
         $copyObj->setRequiresUnlock($this->getRequiresUnlock());
 
@@ -2083,7 +2193,9 @@ abstract class BaseRecipe extends BaseObject implements Persistent
         $this->cost = null;
         $this->karma_cost = null;
         $this->sell_price = null;
+        $this->buy_price = null;
         $this->profit = null;
+        $this->buy_profit = null;
         $this->updated = null;
         $this->requires_unlock = null;
         $this->alreadyInSave = false;

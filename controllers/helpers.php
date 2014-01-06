@@ -109,7 +109,7 @@ function item_list(Application $app, Request $request, ItemQuery $q, $page, $ite
  * @param  array         $tplVars
  */
 function recipe_list(Application $app, Request $request, RecipeQuery $q, $page, $itemsperpage, array $tplVars = array()) {
-    $sortByOptions = array('name', 'rating', 'cost', 'karma_cost', 'sell_price', 'profit', 'sale_availability', 'offer_availability', 'margin');
+    $sortByOptions = array('name', 'rating', 'cost', 'karma_cost', 'sell_price', 'buy_price', 'profit', 'buy_profit', 'sale_availability', 'offer_availability', 'margin');
 
     foreach ($sortByOptions as $sortByOption) {
         if ($request->get("sort_{$sortByOption}", null)) {

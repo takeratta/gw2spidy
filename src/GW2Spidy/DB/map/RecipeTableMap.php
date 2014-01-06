@@ -51,7 +51,9 @@ class RecipeTableMap extends TableMap
         $this->addColumn('COST', 'Cost', 'INTEGER', false, null, null);
         $this->addColumn('KARMA_COST', 'KarmaCost', 'INTEGER', false, null, null);
         $this->addColumn('SELL_PRICE', 'SellPrice', 'INTEGER', false, null, null);
+        $this->addColumn('BUY_PRICE', 'BuyPrice', 'INTEGER', false, null, null);
         $this->addColumn('PROFIT', 'Profit', 'INTEGER', false, null, null);
+        $this->addColumn('BUY_PROFIT', 'BuyProfit', 'INTEGER', false, null, null);
         $this->addColumn('UPDATED', 'Updated', 'TIMESTAMP', false, null, null);
         $this->addColumn('REQUIRES_UNLOCK', 'RequiresUnlock', 'INTEGER', true, null, 0);
         // validators

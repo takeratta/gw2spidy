@@ -33,7 +33,9 @@ use GW2Spidy\DB\RecipeQuery;
  * @method     RecipeQuery orderByCost($order = Criteria::ASC) Order by the cost column
  * @method     RecipeQuery orderByKarmaCost($order = Criteria::ASC) Order by the karma_cost column
  * @method     RecipeQuery orderBySellPrice($order = Criteria::ASC) Order by the sell_price column
+ * @method     RecipeQuery orderByBuyPrice($order = Criteria::ASC) Order by the buy_price column
  * @method     RecipeQuery orderByProfit($order = Criteria::ASC) Order by the profit column
+ * @method     RecipeQuery orderByBuyProfit($order = Criteria::ASC) Order by the buy_profit column
  * @method     RecipeQuery orderByUpdated($order = Criteria::ASC) Order by the updated column
  * @method     RecipeQuery orderByRequiresUnlock($order = Criteria::ASC) Order by the requires_unlock column
  *
@@ -46,7 +48,9 @@ use GW2Spidy\DB\RecipeQuery;
  * @method     RecipeQuery groupByCost() Group by the cost column
  * @method     RecipeQuery groupByKarmaCost() Group by the karma_cost column
  * @method     RecipeQuery groupBySellPrice() Group by the sell_price column
+ * @method     RecipeQuery groupByBuyPrice() Group by the buy_price column
  * @method     RecipeQuery groupByProfit() Group by the profit column
+ * @method     RecipeQuery groupByBuyProfit() Group by the buy_profit column
  * @method     RecipeQuery groupByUpdated() Group by the updated column
  * @method     RecipeQuery groupByRequiresUnlock() Group by the requires_unlock column
  *
@@ -78,7 +82,9 @@ use GW2Spidy\DB\RecipeQuery;
  * @method     Recipe findOneByCost(int $cost) Return the first Recipe filtered by the cost column
  * @method     Recipe findOneByKarmaCost(int $karma_cost) Return the first Recipe filtered by the karma_cost column
  * @method     Recipe findOneBySellPrice(int $sell_price) Return the first Recipe filtered by the sell_price column
+ * @method     Recipe findOneByBuyPrice(int $buy_price) Return the first Recipe filtered by the buy_price column
  * @method     Recipe findOneByProfit(int $profit) Return the first Recipe filtered by the profit column
+ * @method     Recipe findOneByBuyProfit(int $buy_profit) Return the first Recipe filtered by the buy_profit column
  * @method     Recipe findOneByUpdated(string $updated) Return the first Recipe filtered by the updated column
  * @method     Recipe findOneByRequiresUnlock(int $requires_unlock) Return the first Recipe filtered by the requires_unlock column
  *
@@ -91,7 +97,9 @@ use GW2Spidy\DB\RecipeQuery;
  * @method     array findByCost(int $cost) Return Recipe objects filtered by the cost column
  * @method     array findByKarmaCost(int $karma_cost) Return Recipe objects filtered by the karma_cost column
  * @method     array findBySellPrice(int $sell_price) Return Recipe objects filtered by the sell_price column
+ * @method     array findByBuyPrice(int $buy_price) Return Recipe objects filtered by the buy_price column
  * @method     array findByProfit(int $profit) Return Recipe objects filtered by the profit column
+ * @method     array findByBuyProfit(int $buy_profit) Return Recipe objects filtered by the buy_profit column
  * @method     array findByUpdated(string $updated) Return Recipe objects filtered by the updated column
  * @method     array findByRequiresUnlock(int $requires_unlock) Return Recipe objects filtered by the requires_unlock column
  *
@@ -184,7 +192,7 @@ abstract class BaseRecipeQuery extends ModelCriteria
      */
     protected function findPkSimple($key, $con)
     {
-        $sql = 'SELECT `DATA_ID`, `NAME`, `DISCIPLINE_ID`, `RATING`, `RESULT_ITEM_ID`, `COUNT`, `COST`, `KARMA_COST`, `SELL_PRICE`, `PROFIT`, `UPDATED`, `REQUIRES_UNLOCK` FROM `recipe` WHERE `DATA_ID` = :p0';
+        $sql = 'SELECT `DATA_ID`, `NAME`, `DISCIPLINE_ID`, `RATING`, `RESULT_ITEM_ID`, `COUNT`, `COST`, `KARMA_COST`, `SELL_PRICE`, `BUY_PRICE`, `PROFIT`, `BUY_PROFIT`, `UPDATED`, `REQUIRES_UNLOCK` FROM `recipe` WHERE `DATA_ID` = :p0';
         try {
             $stmt = $con->prepare($sql);
 			$stmt->bindValue(':p0', $key, PDO::PARAM_INT);
@@ -621,6 +629,47 @@ abstract class BaseRecipeQuery extends ModelCriteria
     }
 
     /**
+     * Filter the query on the buy_price column
+     *
+     * Example usage:
+     * <code>
+     * $query->filterByBuyPrice(1234); // WHERE buy_price = 1234
+     * $query->filterByBuyPrice(array(12, 34)); // WHERE buy_price IN (12, 34)
+     * $query->filterByBuyPrice(array('min' => 12)); // WHERE buy_price > 12
+     * </code>
+     *
+     * @param     mixed $buyPrice The value to use as filter.
+     *              Use scalar values for equality.
+     *              Use array values for in_array() equivalent.
+     *              Use associative array('min' => $minValue, 'max' => $maxValue) for intervals.
+     * @param     string $comparison Operator to use for the column comparison, defaults to Criteria::EQUAL
+     *
+     * @return RecipeQuery The current query, for fluid interface
+     */
+    public function filterByBuyPrice($buyPrice = null, $comparison = null)
+    {
+        if (is_array($buyPrice)) {
+            $useMinMax = false;
+            if (isset($buyPrice['min'])) {
+                $this->addUsingAlias(RecipePeer::BUY_PRICE, $buyPrice['min'], Criteria::GREATER_EQUAL);
+                $useMinMax = true;
+            }
+            if (isset($buyPrice['max'])) {
+                $this->addUsingAlias(RecipePeer::BUY_PRICE, $buyPrice['max'], Criteria::LESS_EQUAL);
+                $useMinMax = true;
+            }
+            if ($useMinMax) {
+                return $this;
+            }
+            if (null === $comparison) {
+                $comparison = Criteria::IN;
+            }
+        }
+
+        return $this->addUsingAlias(RecipePeer::BUY_PRICE, $buyPrice, $comparison);
+    }
+
+    /**
      * Filter the query on the profit column
      *
      * Example usage:
@@ -659,6 +708,47 @@ abstract class BaseRecipeQuery extends ModelCriteria
         }
 
         return $this->addUsingAlias(RecipePeer::PROFIT, $profit, $comparison);
+    }
+
+    /**
+     * Filter the query on the buy_profit column
+     *
+     * Example usage:
+     * <code>
+     * $query->filterByBuyProfit(1234); // WHERE buy_profit = 1234
+     * $query->filterByBuyProfit(array(12, 34)); // WHERE buy_profit IN (12, 34)
+     * $query->filterByBuyProfit(array('min' => 12)); // WHERE buy_profit > 12
+     * </code>
+     *
+     * @param     mixed $buyProfit The value to use as filter.
+     *              Use scalar values for equality.
+     *              Use array values for in_array() equivalent.
+     *              Use associative array('min' => $minValue, 'max' => $maxValue) for intervals.
+     * @param     string $comparison Operator to use for the column comparison, defaults to Criteria::EQUAL
+     *
+     * @return RecipeQuery The current query, for fluid interface
+     */
+    public function filterByBuyProfit($buyProfit = null, $comparison = null)
+    {
+        if (is_array($buyProfit)) {
+            $useMinMax = false;
+            if (isset($buyProfit['min'])) {
+                $this->addUsingAlias(RecipePeer::BUY_PROFIT, $buyProfit['min'], Criteria::GREATER_EQUAL);
+                $useMinMax = true;
+            }
+            if (isset($buyProfit['max'])) {
+                $this->addUsingAlias(RecipePeer::BUY_PROFIT, $buyProfit['max'], Criteria::LESS_EQUAL);
+                $useMinMax = true;
+            }
+            if ($useMinMax) {
+                return $this;
+            }
+            if (null === $comparison) {
+                $comparison = Criteria::IN;
+            }
+        }
+
+        return $this->addUsingAlias(RecipePeer::BUY_PROFIT, $buyProfit, $comparison);
     }
 
     /**

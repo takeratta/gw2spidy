@@ -38,13 +38,13 @@ abstract class BaseRecipePeer {
     const TM_CLASS = 'RecipeTableMap';
 
     /** The total number of columns. */
-    const NUM_COLUMNS = 12;
+    const NUM_COLUMNS = 14;
 
     /** The number of lazy-loaded columns. */
     const NUM_LAZY_LOAD_COLUMNS = 0;
 
     /** The number of columns to hydrate (NUM_COLUMNS - NUM_LAZY_LOAD_COLUMNS) */
-    const NUM_HYDRATE_COLUMNS = 12;
+    const NUM_HYDRATE_COLUMNS = 14;
 
     /** the column name for the DATA_ID field */
     const DATA_ID = 'recipe.DATA_ID';
@@ -73,8 +73,14 @@ abstract class BaseRecipePeer {
     /** the column name for the SELL_PRICE field */
     const SELL_PRICE = 'recipe.SELL_PRICE';
 
+    /** the column name for the BUY_PRICE field */
+    const BUY_PRICE = 'recipe.BUY_PRICE';
+
     /** the column name for the PROFIT field */
     const PROFIT = 'recipe.PROFIT';
+
+    /** the column name for the BUY_PROFIT field */
+    const BUY_PROFIT = 'recipe.BUY_PROFIT';
 
     /** the column name for the UPDATED field */
     const UPDATED = 'recipe.UPDATED';
@@ -101,12 +107,12 @@ abstract class BaseRecipePeer {
      * e.g. RecipePeer::$fieldNames[RecipePeer::TYPE_PHPNAME][0] = 'Id'
      */
     protected static $fieldNames = array (
-        BasePeer::TYPE_PHPNAME => array ('DataId', 'Name', 'DisciplineId', 'Rating', 'ResultItemId', 'Count', 'Cost', 'KarmaCost', 'SellPrice', 'Profit', 'Updated', 'RequiresUnlock', ),
-        BasePeer::TYPE_STUDLYPHPNAME => array ('dataId', 'name', 'disciplineId', 'rating', 'resultItemId', 'count', 'cost', 'karmaCost', 'sellPrice', 'profit', 'updated', 'requiresUnlock', ),
-        BasePeer::TYPE_COLNAME => array (RecipePeer::DATA_ID, RecipePeer::NAME, RecipePeer::DISCIPLINE_ID, RecipePeer::RATING, RecipePeer::RESULT_ITEM_ID, RecipePeer::COUNT, RecipePeer::COST, RecipePeer::KARMA_COST, RecipePeer::SELL_PRICE, RecipePeer::PROFIT, RecipePeer::UPDATED, RecipePeer::REQUIRES_UNLOCK, ),
-        BasePeer::TYPE_RAW_COLNAME => array ('DATA_ID', 'NAME', 'DISCIPLINE_ID', 'RATING', 'RESULT_ITEM_ID', 'COUNT', 'COST', 'KARMA_COST', 'SELL_PRICE', 'PROFIT', 'UPDATED', 'REQUIRES_UNLOCK', ),
-        BasePeer::TYPE_FIELDNAME => array ('data_id', 'name', 'discipline_id', 'rating', 'result_item_id', 'count', 'cost', 'karma_cost', 'sell_price', 'profit', 'updated', 'requires_unlock', ),
-        BasePeer::TYPE_NUM => array (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, )
+        BasePeer::TYPE_PHPNAME => array ('DataId', 'Name', 'DisciplineId', 'Rating', 'ResultItemId', 'Count', 'Cost', 'KarmaCost', 'SellPrice', 'BuyPrice', 'Profit', 'BuyProfit', 'Updated', 'RequiresUnlock', ),
+        BasePeer::TYPE_STUDLYPHPNAME => array ('dataId', 'name', 'disciplineId', 'rating', 'resultItemId', 'count', 'cost', 'karmaCost', 'sellPrice', 'buyPrice', 'profit', 'buyProfit', 'updated', 'requiresUnlock', ),
+        BasePeer::TYPE_COLNAME => array (RecipePeer::DATA_ID, RecipePeer::NAME, RecipePeer::DISCIPLINE_ID, RecipePeer::RATING, RecipePeer::RESULT_ITEM_ID, RecipePeer::COUNT, RecipePeer::COST, RecipePeer::KARMA_COST, RecipePeer::SELL_PRICE, RecipePeer::BUY_PRICE, RecipePeer::PROFIT, RecipePeer::BUY_PROFIT, RecipePeer::UPDATED, RecipePeer::REQUIRES_UNLOCK, ),
+        BasePeer::TYPE_RAW_COLNAME => array ('DATA_ID', 'NAME', 'DISCIPLINE_ID', 'RATING', 'RESULT_ITEM_ID', 'COUNT', 'COST', 'KARMA_COST', 'SELL_PRICE', 'BUY_PRICE', 'PROFIT', 'BUY_PROFIT', 'UPDATED', 'REQUIRES_UNLOCK', ),
+        BasePeer::TYPE_FIELDNAME => array ('data_id', 'name', 'discipline_id', 'rating', 'result_item_id', 'count', 'cost', 'karma_cost', 'sell_price', 'buy_price', 'profit', 'buy_profit', 'updated', 'requires_unlock', ),
+        BasePeer::TYPE_NUM => array (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, )
     );
 
     /**
@@ -116,12 +122,12 @@ abstract class BaseRecipePeer {
      * e.g. RecipePeer::$fieldNames[BasePeer::TYPE_PHPNAME]['Id'] = 0
      */
     protected static $fieldKeys = array (
-        BasePeer::TYPE_PHPNAME => array ('DataId' => 0, 'Name' => 1, 'DisciplineId' => 2, 'Rating' => 3, 'ResultItemId' => 4, 'Count' => 5, 'Cost' => 6, 'KarmaCost' => 7, 'SellPrice' => 8, 'Profit' => 9, 'Updated' => 10, 'RequiresUnlock' => 11, ),
-        BasePeer::TYPE_STUDLYPHPNAME => array ('dataId' => 0, 'name' => 1, 'disciplineId' => 2, 'rating' => 3, 'resultItemId' => 4, 'count' => 5, 'cost' => 6, 'karmaCost' => 7, 'sellPrice' => 8, 'profit' => 9, 'updated' => 10, 'requiresUnlock' => 11, ),
-        BasePeer::TYPE_COLNAME => array (RecipePeer::DATA_ID => 0, RecipePeer::NAME => 1, RecipePeer::DISCIPLINE_ID => 2, RecipePeer::RATING => 3, RecipePeer::RESULT_ITEM_ID => 4, RecipePeer::COUNT => 5, RecipePeer::COST => 6, RecipePeer::KARMA_COST => 7, RecipePeer::SELL_PRICE => 8, RecipePeer::PROFIT => 9, RecipePeer::UPDATED => 10, RecipePeer::REQUIRES_UNLOCK => 11, ),
-        BasePeer::TYPE_RAW_COLNAME => array ('DATA_ID' => 0, 'NAME' => 1, 'DISCIPLINE_ID' => 2, 'RATING' => 3, 'RESULT_ITEM_ID' => 4, 'COUNT' => 5, 'COST' => 6, 'KARMA_COST' => 7, 'SELL_PRICE' => 8, 'PROFIT' => 9, 'UPDATED' => 10, 'REQUIRES_UNLOCK' => 11, ),
-        BasePeer::TYPE_FIELDNAME => array ('data_id' => 0, 'name' => 1, 'discipline_id' => 2, 'rating' => 3, 'result_item_id' => 4, 'count' => 5, 'cost' => 6, 'karma_cost' => 7, 'sell_price' => 8, 'profit' => 9, 'updated' => 10, 'requires_unlock' => 11, ),
-        BasePeer::TYPE_NUM => array (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, )
+        BasePeer::TYPE_PHPNAME => array ('DataId' => 0, 'Name' => 1, 'DisciplineId' => 2, 'Rating' => 3, 'ResultItemId' => 4, 'Count' => 5, 'Cost' => 6, 'KarmaCost' => 7, 'SellPrice' => 8, 'BuyPrice' => 9, 'Profit' => 10, 'BuyProfit' => 11, 'Updated' => 12, 'RequiresUnlock' => 13, ),
+        BasePeer::TYPE_STUDLYPHPNAME => array ('dataId' => 0, 'name' => 1, 'disciplineId' => 2, 'rating' => 3, 'resultItemId' => 4, 'count' => 5, 'cost' => 6, 'karmaCost' => 7, 'sellPrice' => 8, 'buyPrice' => 9, 'profit' => 10, 'buyProfit' => 11, 'updated' => 12, 'requiresUnlock' => 13, ),
+        BasePeer::TYPE_COLNAME => array (RecipePeer::DATA_ID => 0, RecipePeer::NAME => 1, RecipePeer::DISCIPLINE_ID => 2, RecipePeer::RATING => 3, RecipePeer::RESULT_ITEM_ID => 4, RecipePeer::COUNT => 5, RecipePeer::COST => 6, RecipePeer::KARMA_COST => 7, RecipePeer::SELL_PRICE => 8, RecipePeer::BUY_PRICE => 9, RecipePeer::PROFIT => 10, RecipePeer::BUY_PROFIT => 11, RecipePeer::UPDATED => 12, RecipePeer::REQUIRES_UNLOCK => 13, ),
+        BasePeer::TYPE_RAW_COLNAME => array ('DATA_ID' => 0, 'NAME' => 1, 'DISCIPLINE_ID' => 2, 'RATING' => 3, 'RESULT_ITEM_ID' => 4, 'COUNT' => 5, 'COST' => 6, 'KARMA_COST' => 7, 'SELL_PRICE' => 8, 'BUY_PRICE' => 9, 'PROFIT' => 10, 'BUY_PROFIT' => 11, 'UPDATED' => 12, 'REQUIRES_UNLOCK' => 13, ),
+        BasePeer::TYPE_FIELDNAME => array ('data_id' => 0, 'name' => 1, 'discipline_id' => 2, 'rating' => 3, 'result_item_id' => 4, 'count' => 5, 'cost' => 6, 'karma_cost' => 7, 'sell_price' => 8, 'buy_price' => 9, 'profit' => 10, 'buy_profit' => 11, 'updated' => 12, 'requires_unlock' => 13, ),
+        BasePeer::TYPE_NUM => array (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, )
     );
 
     /**
@@ -204,7 +210,9 @@ abstract class BaseRecipePeer {
             $criteria->addSelectColumn(RecipePeer::COST);
             $criteria->addSelectColumn(RecipePeer::KARMA_COST);
             $criteria->addSelectColumn(RecipePeer::SELL_PRICE);
+            $criteria->addSelectColumn(RecipePeer::BUY_PRICE);
             $criteria->addSelectColumn(RecipePeer::PROFIT);
+            $criteria->addSelectColumn(RecipePeer::BUY_PROFIT);
             $criteria->addSelectColumn(RecipePeer::UPDATED);
             $criteria->addSelectColumn(RecipePeer::REQUIRES_UNLOCK);
         } else {
@@ -217,7 +225,9 @@ abstract class BaseRecipePeer {
             $criteria->addSelectColumn($alias . '.COST');
             $criteria->addSelectColumn($alias . '.KARMA_COST');
             $criteria->addSelectColumn($alias . '.SELL_PRICE');
+            $criteria->addSelectColumn($alias . '.BUY_PRICE');
             $criteria->addSelectColumn($alias . '.PROFIT');
+            $criteria->addSelectColumn($alias . '.BUY_PROFIT');
             $criteria->addSelectColumn($alias . '.UPDATED');
             $criteria->addSelectColumn($alias . '.REQUIRES_UNLOCK');
         }

@@ -39,14 +39,14 @@
         <column name="last_updated" type="timestamp" />
         <column name="sale_price_change_last_hour" type="integer" default="0" />
         <column name="offer_price_change_last_hour" type="integer" default="0" />
-                
+
         <foreign-key foreignTable="item_type" phpName="ItemType" refPhpName="Item">
             <reference local="item_type_id" foreign="id" />
         </foreign-key>
         <foreign-key foreignTable="item_sub_type" phpName="ItemSubType" refPhpName="Item">
             <reference local="item_sub_type_id" foreign="id" />
         </foreign-key>
-        
+
         <index name="search_name">
             <index-column name="name" />
             <index-column name="tp_name" />
@@ -71,7 +71,9 @@
         <column name="cost" type="integer" />
         <column name="karma_cost" type="integer" />
         <column name="sell_price" type="integer" />
+        <column name="buy_price" type="integer" />
         <column name="profit" type="integer" />
+        <column name="buy_profit" type="integer" />
         <column name="updated" type="timestamp" />
         <column name="requires_unlock" type="integer" required="true" default="0" />
 
@@ -82,7 +84,7 @@
         <foreign-key foreignTable="item" phpName="ResultItem" refPhpName="ResultOfRecipe">
             <reference local="result_item_id" foreign="data_id" />
         </foreign-key>
-        
+
         <index name="search_name">
             <index-column name="name" />
         </index>
@@ -151,10 +153,10 @@
         <column name="email" type="varchar" size="255" required="true" />
         <column name="password" type="varchar" size="255" />
         <column name="roles" type="varchar" size="255" default="USER_ROLE" />
-        
+
         <column name="hybrid_auth_provider_id" type="varchar" size="50" />
         <column name="hybrid_auth_id" type="varchar" size="255" />
-        
+
         <unique name="unique_username">
             <unique-column name="username" />
         </unique>
@@ -169,14 +171,14 @@
         <column name="id" type="integer" required="true" primaryKey="true" autoIncrement="true" />
         <column name="user_id" type="integer" required="true" />
         <column name="item_id" type="integer" required="true" />
-        
+
         <foreign-key foreignTable="user" phpName="User" refPhpName="Watchlist">
             <reference local="user_id" foreign="id" />
         </foreign-key>
         <foreign-key foreignTable="item" phpName="Item" refPhpName="OnWatchlist">
             <reference local="item_id" foreign="data_id" />
         </foreign-key>
-        
+
         <unique name="unique_user_item">
             <unique-column name="user_id" />
             <unique-column name="item_id" />

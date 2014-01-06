@@ -27,7 +27,9 @@ while (($recipes = $q->find()) && $recipes->count()) {
             $recipe->setCost($price);
             $recipe->setKarmaCost($karmaprice);
             $recipe->setSellPrice($recipe->getResultItem()->getMinSaleUnitPrice() * $recipe->getCount());
+            $recipe->setBuyPrice($recipe->getResultItem()->getMaxOfferUnitPrice()* $recipe->getCount());
             $recipe->setProfit(($recipe->getSellPrice() * 0.85) - $price);
+            $recipe->setBuyProfit(($recipe->getBuyPrice() * 0.85) - $price);
 
             $recipe->save();
 
