@@ -5,6 +5,15 @@ if [ -z "$ROOT" ]; then
     export ROOT
 fi
 
+if [ -z "$PHP" ]; then
+    if [ -z `which hhvm` ]; then
+        PHP="php"
+        export PHP
+    else
+        PHP="hhvm"
+    fi
+fi
+
 if [[ -z `ls /var/run/gw2spidy | grep "worker-.*.pid"` ]]; then
     echo "no worker pid files"  
     exit 0

@@ -11,6 +11,15 @@ if [ -z "$ROOT" ]; then
     export ROOT
 fi
 
+if [ -z "$PHP" ]; then
+    if [ -z `which hhvm` ]; then
+        PHP="php"
+        export PHP
+    else
+        PHP="hhvm"
+    fi
+fi
+
 sudo mkdir -p $LOGDIR
 sudo mkdir -p $PIDDIR
 sudo chmod -R 0777 $LOGDIR

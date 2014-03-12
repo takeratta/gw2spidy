@@ -9,6 +9,15 @@ if [ -z "$ROOT" ]; then
     export ROOT
 fi
 
+if [ -z "$PHP" ]; then
+    if [ -z `which hhvm` ]; then
+        PHP="php"
+        export PHP
+    else
+        PHP="hhvm"
+    fi
+fi
+
 if [[ -z "${NAME}" ]]; then
     echo "[[ EXIT ]] NO DAEMON NAME SPECIFIED \n"
     exit 1
@@ -36,5 +45,5 @@ while [[ true ]]; do
     fi
 
     echo "restart"; 
-    php ${ROOT}/daemons/${NAME}.php &>> /var/log/gw2spidy/${NAME}.${NUMBER}.log; 
+    $PHP ${ROOT}/daemons/${NAME}.php &>> /var/log/gw2spidy/${NAME}.${NUMBER}.log; 
 done

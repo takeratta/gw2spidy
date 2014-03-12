@@ -8,11 +8,20 @@ if [ -z "$ROOT" ]; then
     export ROOT
 fi
 
+if [ -z "$PHP" ]; then
+    if [ -z `which hhvm` ]; then
+        PHP="php"
+        export PHP
+    else
+        PHP="hhvm"
+    fi
+fi
+
 if [[ -z "${MOD}" ]]; then
     MOD=1
 fi
 
 for ((i = 0; i < $MOD; i++)); do 
-    php ${ROOT}/tools/rebuild-datasets.php $i $MOD &
+    $PHP ${ROOT}/tools/rebuild-datasets.php $i $MOD &
 done
 

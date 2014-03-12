@@ -5,6 +5,15 @@ if [ -z "$ROOT" ]; then
     export ROOT
 fi
 
+if [ -z "$PHP" ]; then
+    if [ -z `which hhvm` ]; then
+        PHP="php"
+        export PHP
+    else
+        PHP="hhvm"
+    fi
+fi
+
 flush_twig_cache() {
 	rm -rf $ROOT/tmp/twig-cache/*
 }
@@ -14,7 +23,7 @@ flush_varnish() {
 }
 
 flush_apc() {
-    php $ROOT/tools/purge-cache.php -a
+    $PHP $ROOT/tools/purge-cache.php -a
 }
 
 flush_twig_cache
