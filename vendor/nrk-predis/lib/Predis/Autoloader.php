@@ -36,7 +36,7 @@ class Autoloader
     /**
      * Registers the autoloader class with the PHP SPL autoloader.
      *
-     * @param boolean $prepend Prepend the autoloader on the stack instead of appending it.
+     * @param bool $prepend Prepend the autoloader on the stack instead of appending it.
      */
     public static function register($prepend = false)
     {
@@ -53,6 +53,7 @@ class Autoloader
         if (0 === strpos($className, $this->prefix)) {
             $parts = explode('\\', substr($className, $this->prefixLength));
             $filepath = $this->directory.DIRECTORY_SEPARATOR.implode(DIRECTORY_SEPARATOR, $parts).'.php';
+
             if (is_file($filepath)) {
                 require($filepath);
             }

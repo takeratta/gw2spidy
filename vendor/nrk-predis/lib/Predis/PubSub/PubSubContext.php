@@ -11,69 +11,60 @@
 
 namespace Predis\PubSub;
 
-use Predis\Client;
-use Predis\Helpers;
 use Predis\ClientException;
+use Predis\ClientInterface;
+use Predis\Command\AbstractCommand as Command;
 use Predis\NotSupportedException;
+use Predis\Connection\AggregatedConnectionInterface;
 
 /**
  * Client-side abstraction of a Publish / Subscribe context.
  *
  * @author Daniele Alessandri <suppakilla@gmail.com>
  */
-class PubSubContext implements \Iterator
+class PubSubContext extends AbstractPubSubContext
 {
-    const SUBSCRIBE    = 'subscribe';
-    const UNSUBSCRIBE  = 'unsubscribe';
-    const PSUBSCRIBE   = 'psubscribe';
-    const PUNSUBSCRIBE = 'punsubscribe';
-    const MESSAGE      = 'message';
-    const PMESSAGE     = 'pmessage';
-
-    const STATUS_VALID       = 0x0001;
-    const STATUS_SUBSCRIBED  = 0x0010;
-    const STATUS_PSUBSCRIBED = 0x0100;
-
     private $client;
-    private $position;
     private $options;
 
     /**
-     * @param Client Client instance used by the context.
-     * @param array Options for the context initialization.
+     * @param ClientInterface $client  Client instance used by the context.
+     * @param array           $options Options for the context initialization.
      */
-    public function __construct(Client $client, Array $options = null)
+    public function __construct(ClientInterface $client, Array $options = null)
     {
         $this->checkCapabilities($client);
         $this->options = $options ?: array();
         $this->client = $client;
-        $this->statusFlags = self::STATUS_VALID;
 
         $this->genericSubscribeInit('subscribe');
         $this->genericSubscribeInit('psubscribe');
     }
 
     /**
-     * Automatically closes the context when PHP's garbage collector kicks in.
+     * Returns the underlying client instance used by the pub/sub iterator.
+     *
+     * @return ClientInterface
      */
-    public function __destruct()
+    public function getClient()
     {
-        $this->closeContext(true);
+        return $this->client;
     }
 
     /**
      * Checks if the passed client instance satisfies the required conditions
      * needed to initialize a Publish / Subscribe context.
      *
-     * @param Client Client instance used by the context.
+     * @param ClientInterface $client Client instance used by the context.
      */
-    private function checkCapabilities(Client $client)
+    private function checkCapabilities(ClientInterface $client)
     {
-        if (Helpers::isCluster($client->getConnection())) {
-            throw new NotSupportedException('Cannot initialize a PUB/SUB context over a cluster of connections');
+        if ($client->getConnection() instanceof AggregatedConnectionInterface) {
+            throw new NotSupportedException('Cannot initialize a PUB/SUB context when using aggregated connections');
         }
 
         $commands = array('publish', 'subscribe', 'unsubscribe', 'psubscribe', 'punsubscribe');
+
         if ($client->getProfile()->supportsCommands($commands) === false) {
             throw new NotSupportedException('The current profile does not support PUB/SUB related commands');
         }
@@ -92,97 +83,11 @@ class PubSubContext implements \Iterator
     }
 
     /**
-     * Checks if the specified flag is valid in the state of the context.
-     *
-     * @param int $value Flag.
-     * @return Boolean
+     * {@inheritdoc}
      */
-    private function isFlagSet($value)
+    protected function writeCommand($method, $arguments)
     {
-        return ($this->statusFlags & $value) === $value;
-    }
-
-    /**
-     * Subscribes to the specified channels.
-     *
-     * @param mixed $arg,... One or more channel names.
-     */
-    public function subscribe(/* arguments */)
-    {
-        $this->writeCommand(self::SUBSCRIBE, func_get_args());
-        $this->statusFlags |= self::STATUS_SUBSCRIBED;
-    }
-
-    /**
-     * Unsubscribes from the specified channels.
-     *
-     * @param mixed $arg,... One or more channel names.
-     */
-    public function unsubscribe(/* arguments */)
-    {
-        $this->writeCommand(self::UNSUBSCRIBE, func_get_args());
-    }
-
-    /**
-     * Subscribes to the specified channels using a pattern.
-     *
-     * @param mixed $arg,... One or more channel name patterns.
-     */
-    public function psubscribe(/* arguments */)
-    {
-        $this->writeCommand(self::PSUBSCRIBE, func_get_args());
-        $this->statusFlags |= self::STATUS_PSUBSCRIBED;
-    }
-
-    /**
-     * Unsubscribes from the specified channels using a pattern.
-     *
-     * @param mixed $arg,... One or more channel name patterns.
-     */
-    public function punsubscribe(/* arguments */)
-    {
-        $this->writeCommand(self::PUNSUBSCRIBE, func_get_args());
-    }
-
-    /**
-     * Closes the context by unsubscribing from all the subscribed channels.
-     * Optionally, the context can be forcefully closed by dropping the
-     * underlying connection.
-     *
-     * @param Boolean $force Forcefully close the context by closing the connection.
-     * @return Boolean Returns false if there are no pending messages.
-     */
-    public function closeContext($force = false)
-    {
-        if (!$this->valid()) {
-            return false;
-        }
-
-        if ($force) {
-            $this->invalidate();
-            $this->client->disconnect();
-        }
-        else {
-            if ($this->isFlagSet(self::STATUS_SUBSCRIBED)) {
-                $this->unsubscribe();
-            }
-            if ($this->isFlagSet(self::STATUS_PSUBSCRIBED)) {
-                $this->punsubscribe();
-            }
-        }
-
-        return !$force;
-    }
-
-    /**
-     * Writes a Redis command on the underlying connection.
-     *
-     * @param string $method ID of the command.
-     * @param array $arguments List of arguments.
-     */
-    private function writeCommand($method, $arguments)
-    {
-        $arguments = Helpers::filterArrayArguments($arguments);
+        $arguments = Command::normalizeArguments($arguments);
         $command = $this->client->createCommand($method, $arguments);
         $this->client->getConnection()->writeCommand($command);
     }
@@ -190,71 +95,15 @@ class PubSubContext implements \Iterator
     /**
      * {@inheritdoc}
      */
-    public function rewind()
+    protected function disconnect()
     {
-        // NOOP
-    }
-
-    /**
-     * Returns the last message payload retrieved from the server and generated
-     * by one of the active subscriptions.
-     *
-     * @return array
-     */
-    public function current()
-    {
-        return $this->getValue();
+        $this->client->disconnect();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function key()
-    {
-        return $this->position;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function next()
-    {
-        if ($this->valid()) {
-            $this->position++;
-        }
-
-        return $this->position;
-    }
-
-    /**
-     * Checks if the the context is still in a valid state to continue.
-     *
-     * @return Boolean
-     */
-    public function valid()
-    {
-        $isValid = $this->isFlagSet(self::STATUS_VALID);
-        $subscriptionFlags = self::STATUS_SUBSCRIBED | self::STATUS_PSUBSCRIBED;
-        $hasSubscriptions = ($this->statusFlags & $subscriptionFlags) > 0;
-
-        return $isValid && $hasSubscriptions;
-    }
-
-    /**
-     * Resets the state of the context.
-     */
-    private function invalidate()
-    {
-        $this->statusFlags = 0x0000;
-    }
-
-    /**
-     * Waits for a new message from the server generated by one of the active
-     * subscriptions and returns it when available.
-     *
-     * @return array
-     */
-    private function getValue()
+    protected function getValue()
     {
         $response = $this->client->getConnection()->read();
 
@@ -266,6 +115,8 @@ class PubSubContext implements \Iterator
                 if ($response[2] === 0) {
                     $this->invalidate();
                 }
+                // The missing break here is intentional as we must process
+                // subscriptions and unsubscriptions as standard messages.
 
             case self::MESSAGE:
                 return (object) array(

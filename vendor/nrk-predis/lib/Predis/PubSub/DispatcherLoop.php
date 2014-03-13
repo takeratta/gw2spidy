@@ -11,7 +11,7 @@
 
 namespace Predis\PubSub;
 
-use Predis\Client;
+use Predis\ClientInterface;
 
 /**
  * Method-dispatcher loop built around the client-side abstraction of a Redis
@@ -21,26 +21,25 @@ use Predis\Client;
  */
 class DispatcherLoop
 {
-    private $client;
     private $pubSubContext;
-    private $callbacks;
-    private $defaultCallback;
-    private $subscriptionCallback;
+
+    protected $callbacks;
+    protected $defaultCallback;
+    protected $subscriptionCallback;
 
     /**
-     * @param Client Client instance used by the context.
+     * @param ClientInterface $client Client instance used by the context.
      */
-    public function __construct(Client $client)
+    public function __construct(ClientInterface $client)
     {
         $this->callbacks = array();
-        $this->client = $client;
-        $this->pubSubContext = $client->pubSub();
+        $this->pubSubContext = $client->pubSubLoop();
     }
 
     /**
      * Checks if the passed argument is a valid callback.
      *
-     * @param mixed A callback.
+     * @param mixed $callable A callback.
      */
     protected function validateCallback($callable)
     {
@@ -69,6 +68,7 @@ class DispatcherLoop
         if (isset($callable)) {
             $this->validateCallback($callable);
         }
+
         $this->subscriptionCallback = $callable;
     }
 
@@ -83,19 +83,22 @@ class DispatcherLoop
         if (isset($callable)) {
             $this->validateCallback($callable);
         }
+
         $this->subscriptionCallback = $callable;
     }
 
     /**
      * Binds a callback to a channel.
      *
-     * @param string $channel Channel name.
+     * @param string   $channel  Channel name.
      * @param Callable $callback A callback.
      */
     public function attachCallback($channel, $callback)
     {
+        $callbackName = $this->getPrefixKeys() . $channel;
+
         $this->validateCallback($callback);
-        $this->callbacks[$channel] = $callback;
+        $this->callbacks[$callbackName] = $callback;
         $this->pubSubContext->subscribe($channel);
     }
 
@@ -106,8 +109,10 @@ class DispatcherLoop
      */
     public function detachCallback($channel)
     {
-        if (isset($this->callbacks[$channel])) {
-            unset($this->callbacks[$channel]);
+        $callbackName = $this->getPrefixKeys() . $channel;
+
+        if (isset($this->callbacks[$callbackName])) {
+            unset($this->callbacks[$callbackName]);
             $this->pubSubContext->unsubscribe($channel);
         }
     }
@@ -125,14 +130,14 @@ class DispatcherLoop
                     $callback = $this->subscriptionCallback;
                     call_user_func($callback, $message);
                 }
+
                 continue;
             }
 
             if (isset($this->callbacks[$message->channel])) {
                 $callback = $this->callbacks[$message->channel];
                 call_user_func($callback, $message->payload);
-            }
-            else if (isset($this->defaultCallback)) {
+            } elseif (isset($this->defaultCallback)) {
                 $callback = $this->defaultCallback;
                 call_user_func($callback, $message);
             }
@@ -145,5 +150,21 @@ class DispatcherLoop
     public function stop()
     {
         $this->pubSubContext->closeContext();
+    }
+
+    /**
+     * Return the prefix of the keys
+     *
+     * @return string
+     */
+    protected function getPrefixKeys()
+    {
+        $options = $this->pubSubContext->getClient()->getOptions();
+
+        if (isset($options->prefix)) {
+            return $options->prefix->getPrefix();
+        }
+
+        return '';
     }
 }

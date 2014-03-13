@@ -11,11 +11,11 @@
 
 namespace Predis\Protocol\Text;
 
-use Predis\Helpers;
-use Predis\Protocol\IResponseReader;
-use Predis\Protocol\IResponseHandler;
+use Predis\CommunicationException;
+use Predis\Connection\ComposableConnectionInterface;
 use Predis\Protocol\ProtocolException;
-use Predis\Network\IConnectionComposable;
+use Predis\Protocol\ResponseHandlerInterface;
+use Predis\Protocol\ResponseReaderInterface;
 
 /**
  * Implements a pluggable response reader using the standard wire protocol
@@ -24,7 +24,7 @@ use Predis\Network\IConnectionComposable;
  * @link http://redis.io/topics/protocol
  * @author Daniele Alessandri <suppakilla@gmail.com>
  */
-class TextResponseReader implements IResponseReader
+class TextResponseReader implements ResponseReaderInterface
 {
     private $handlers;
 
@@ -55,10 +55,10 @@ class TextResponseReader implements IResponseReader
      * Sets a response handler for a certain prefix that identifies a type of
      * reply that can be returned by Redis.
      *
-     * @param string $prefix Identifier for a type of reply.
-     * @param IResponseHandler $handler Response handler for the reply.
+     * @param string                   $prefix  Identifier for a type of reply.
+     * @param ResponseHandlerInterface $handler Response handler for the reply.
      */
-    public function setHandler($prefix, IResponseHandler $handler)
+    public function setHandler($prefix, ResponseHandlerInterface $handler)
     {
         $this->handlers[$prefix] = $handler;
     }
@@ -67,8 +67,8 @@ class TextResponseReader implements IResponseReader
      * Returns the response handler associated to a certain type of reply that
      * can be returned by Redis.
      *
-     * @param string $prefix Identifier for a type of reply.
-     * @return IResponseHandler
+     * @param  string                   $prefix Identifier for a type of reply.
+     * @return ResponseHandlerInterface
      */
     public function getHandler($prefix)
     {
@@ -80,16 +80,18 @@ class TextResponseReader implements IResponseReader
     /**
      * {@inheritdoc}
      */
-    public function read(IConnectionComposable $connection)
+    public function read(ComposableConnectionInterface $connection)
     {
         $header = $connection->readLine();
+
         if ($header === '') {
             $this->protocolError($connection, 'Unexpected empty header');
         }
 
         $prefix = $header[0];
+
         if (!isset($this->handlers[$prefix])) {
-            $this->protocolError($connection, "Unknown prefix '$prefix'");
+            $this->protocolError($connection, "Unknown prefix: '$prefix'");
         }
 
         $handler = $this->handlers[$prefix];
@@ -101,11 +103,11 @@ class TextResponseReader implements IResponseReader
      * Helper method used to handle a protocol error generated while reading a
      * reply from a connection to Redis.
      *
-     * @param IConnectionComposable $connection Connection to Redis that generated the error.
-     * @param string $message Error message.
+     * @param ComposableConnectionInterface $connection Connection to Redis that generated the error.
+     * @param string                        $message    Error message.
      */
-    private function protocolError(IConnectionComposable $connection, $message)
+    private function protocolError(ComposableConnectionInterface $connection, $message)
     {
-        Helpers::onCommunicationException(new ProtocolException($connection, $message));
+        CommunicationException::handle(new ProtocolException($connection, $message));
     }
 }

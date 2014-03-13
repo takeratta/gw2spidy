@@ -17,7 +17,7 @@ namespace Predis;
  *
  * @author Daniele Alessandri <suppakilla@gmail.com>
  */
-class ResponseError implements IRedisServerError
+class ResponseError implements ResponseErrorInterface
 {
     private $message;
 
@@ -43,6 +43,7 @@ class ResponseError implements IRedisServerError
     public function getErrorType()
     {
         list($errorType, ) = explode(' ', $this->getMessage(), 2);
+
         return $errorType;
     }
 

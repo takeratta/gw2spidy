@@ -18,7 +18,7 @@ require 'SharedConfigurations.php';
 $client = new Predis\Client($single_server + array('read_write_timeout' => 0));
 
 // Initialize a new pubsub context
-$pubsub = $client->pubSub();
+$pubsub = $client->pubSubLoop();
 
 // Subscribe to your channels
 $pubsub->subscribe('control_channel', 'notifications');
@@ -38,12 +38,10 @@ foreach ($pubsub as $message) {
                 if ($message->payload == 'quit_loop') {
                     echo "Aborting pubsub loop...\n";
                     $pubsub->unsubscribe();
-                }
-                else {
+                } else {
                     echo "Received an unrecognized command: {$message->payload}.\n";
                 }
-            }
-            else {
+            } else {
                 echo "Received the following message from {$message->channel}:\n",
                      "  {$message->payload}\n\n";
             }

@@ -13,12 +13,13 @@ require 'SharedConfigurations.php';
 
 // Developers can customize the distribution strategy used by the client
 // to distribute keys among a cluster of servers simply by creating a class
-// that implements the Predis\Distribution\IDistributionStrategy interface.
+// that implements Predis\Distribution\DistributionStrategyInterface.
 
-use Predis\Distribution\IDistributionStrategy;
-use Predis\Network\PredisCluster;
+use Predis\Connection\PredisCluster;
+use Predis\Cluster\Distribution\DistributionStrategyInterface;
+use Predis\Cluster\Hash\HashGeneratorInterface;
 
-class NaiveDistributionStrategy implements IDistributionStrategy
+class NaiveDistributionStrategy implements DistributionStrategyInterface, HashGeneratorInterface
 {
     private $nodes;
     private $nodesCount;
@@ -37,7 +38,7 @@ class NaiveDistributionStrategy implements IDistributionStrategy
 
     public function remove($node)
     {
-        $this->nodes = array_filter($this->nodes, function($n) use($node) {
+        $this->nodes = array_filter($this->nodes, function ($n) use ($node) {
             return $n !== $node;
         });
 
@@ -46,24 +47,30 @@ class NaiveDistributionStrategy implements IDistributionStrategy
 
     public function get($key)
     {
-        $count = $this->nodesCount;
-        if ($count === 0) {
+        if (0 === $count = $this->nodesCount) {
             throw new RuntimeException('No connections');
         }
 
         return $this->nodes[$count > 1 ? abs($key % $count) : 0];
     }
 
-    public function generateKey($value)
+    public function hash($value)
     {
         return crc32($value);
+    }
+
+    public function getHashGenerator()
+    {
+        return $this;
     }
 }
 
 $options = array(
-    'cluster' => function() {
+    'cluster' => function () {
         $distributor = new NaiveDistributionStrategy();
-        return new PredisCluster($distributor);
+        $cluster = new PredisCluster($distributor);
+
+        return $cluster;
     },
 );
 

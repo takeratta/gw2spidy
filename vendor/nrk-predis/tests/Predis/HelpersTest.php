@@ -11,25 +11,13 @@
 
 namespace Predis;
 
-use \PHPUnit_Framework_TestCase as StandardTestCase;
+use PredisTestCase;
 
 /**
  *
  */
-class HelpersTest extends StandardTestCase
+class HelpersTest extends PredisTestCase
 {
-    /**
-     * @group disconnected
-     */
-    public function testConnectionIsCluster()
-    {
-        $single = $this->getMock('Predis\Network\IConnectionSingle');
-        $cluster = $this->getMock('Predis\Network\IConnectionCluster');
-
-        $this->assertFalse(Helpers::isCluster($single));
-        $this->assertTrue(Helpers::isCluster($cluster));
-    }
-
     /**
      * @group disconnected
      */
@@ -37,7 +25,7 @@ class HelpersTest extends StandardTestCase
     {
         $this->setExpectedException('Predis\CommunicationException');
 
-        $connection = $this->getMock('Predis\Network\IConnectionSingle');
+        $connection = $this->getMock('Predis\Connection\SingleConnectionInterface');
         $connection->expects($this->once())->method('isConnected')->will($this->returnValue(true));
         $connection->expects($this->once())->method('disconnect');
 
@@ -78,19 +66,5 @@ class HelpersTest extends StandardTestCase
 
         $arguments = array(new \stdClass());
         $this->assertSame($arguments, Helpers::filterArrayArguments($arguments));
-    }
-
-    /**
-     * @group disconnected
-     */
-    public function testExtractKeyTag()
-    {
-        $this->assertEquals('foo:bar', Helpers::extractKeyTag('foo:bar'));
-        $this->assertEquals('foo:', Helpers::extractKeyTag('{foo:}bar'));
-        $this->assertEquals('bar', Helpers::extractKeyTag('foo:{bar}'));
-        $this->assertEquals('foo:bar', Helpers::extractKeyTag('{foo:bar}'));
-        $this->assertEquals('', Helpers::extractKeyTag('foo{}:bar'));
-        $this->assertEquals('', Helpers::extractKeyTag(''));
-        $this->assertEquals('', Helpers::extractKeyTag('{}'));
     }
 }

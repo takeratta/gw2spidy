@@ -11,14 +11,18 @@
 
 namespace Predis\Transaction;
 
-use Predis\Client;
-use Predis\Helpers;
-use Predis\ResponseQueued;
+use SplQueue;
+use Predis\BasicClientInterface;
 use Predis\ClientException;
-use Predis\ServerException;
-use Predis\Commands\ICommand;
-use Predis\NotSupportedException;
+use Predis\ClientInterface;
 use Predis\CommunicationException;
+use Predis\ExecutableContextInterface;
+use Predis\NotSupportedException;
+use Predis\ResponseErrorInterface;
+use Predis\ResponseQueued;
+use Predis\ServerException;
+use Predis\Command\CommandInterface;
+use Predis\Connection\AggregatedConnectionInterface;
 use Predis\Protocol\ProtocolException;
 
 /**
@@ -26,14 +30,14 @@ use Predis\Protocol\ProtocolException;
  *
  * @author Daniele Alessandri <suppakilla@gmail.com>
  */
-class MultiExecContext
+class MultiExecContext implements BasicClientInterface, ExecutableContextInterface
 {
-    const STATE_RESET       = 0x00000;
-    const STATE_INITIALIZED = 0x00001;
-    const STATE_INSIDEBLOCK = 0x00010;
-    const STATE_DISCARDED   = 0x00100;
-    const STATE_CAS         = 0x01000;
-    const STATE_WATCH       = 0x10000;
+    const STATE_RESET       = 0;    // 0b00000
+    const STATE_INITIALIZED = 1;    // 0b00001
+    const STATE_INSIDEBLOCK = 2;    // 0b00010
+    const STATE_DISCARDED   = 4;    // 0b00100
+    const STATE_CAS         = 8;    // 0b01000
+    const STATE_WATCH       = 16;   // 0b10000
 
     private $state;
     private $canWatch;
@@ -43,10 +47,10 @@ class MultiExecContext
     protected $commands;
 
     /**
-     * @param Client Client instance used by the context.
-     * @param array Options for the context initialization.
+     * @param ClientInterface $client  Client instance used by the context.
+     * @param array           $options Options for the context initialization.
      */
-    public function __construct(Client $client, Array $options = null)
+    public function __construct(ClientInterface $client, Array $options = null)
     {
         $this->checkCapabilities($client);
         $this->options = $options ?: array();
@@ -97,8 +101,8 @@ class MultiExecContext
     /**
      * Checks is a flag is set.
      *
-     * @param int $flags Flag
-     * @return Boolean
+     * @param  int  $flags Flag
+     * @return bool
      */
     protected function checkState($flags)
     {
@@ -109,15 +113,16 @@ class MultiExecContext
      * Checks if the passed client instance satisfies the required conditions
      * needed to initialize a transaction context.
      *
-     * @param Client Client instance used by the context.
+     * @param ClientInterface $client Client instance used by the context.
      */
-    private function checkCapabilities(Client $client)
+    private function checkCapabilities(ClientInterface $client)
     {
-        if (Helpers::isCluster($client->getConnection())) {
-            throw new NotSupportedException('Cannot initialize a MULTI/EXEC context over a cluster of connections');
+        if ($client->getConnection() instanceof AggregatedConnectionInterface) {
+            throw new NotSupportedException('Cannot initialize a MULTI/EXEC context when using aggregated connections');
         }
 
         $profile = $client->getProfile();
+
         if ($profile->supportsCommands(array('multi', 'exec', 'discard')) === false) {
             throw new NotSupportedException('The current profile does not support MULTI, EXEC and DISCARD');
         }
@@ -141,7 +146,7 @@ class MultiExecContext
     protected function reset()
     {
         $this->setState(self::STATE_RESET);
-        $this->commands = array();
+        $this->commands = new SplQueue();
     }
 
     /**
@@ -167,6 +172,7 @@ class MultiExecContext
 
         if (!$cas || ($cas && $discarded)) {
             $this->client->multi();
+
             if ($discarded) {
                 $this->unflagState(self::STATE_CAS);
             }
@@ -177,10 +183,10 @@ class MultiExecContext
     }
 
     /**
-     * Dinamically invokes a Redis command with the specified arguments.
+     * Dynamically invokes a Redis command with the specified arguments.
      *
-     * @param string $method Command ID.
-     * @param array $arguments Arguments for the command.
+     * @param  string $method    Command ID.
+     * @param  array  $arguments Arguments for the command.
      * @return mixed
      */
     public function __call($method, $arguments)
@@ -194,23 +200,23 @@ class MultiExecContext
     /**
      * Executes the specified Redis command.
      *
-     * @param ICommand $command A Redis command.
-     * @return mixed
+     * @param CommandInterface $command Command instance.
+     * @return $this|mixed
      */
-    public function executeCommand(ICommand $command)
+    public function executeCommand(CommandInterface $command)
     {
         $this->initialize();
-
         $response = $this->client->executeCommand($command);
 
         if ($this->checkState(self::STATE_CAS)) {
             return $response;
         }
+
         if (!$response instanceof ResponseQueued) {
             $this->onProtocolError('The server did not respond with a QUEUED status reply');
         }
 
-        $this->commands[] = $command;
+        $this->commands->enqueue($command);
 
         return $this;
     }
@@ -218,7 +224,7 @@ class MultiExecContext
     /**
      * Executes WATCH on one or more keys.
      *
-     * @param string|array $keys One or more keys.
+     * @param  string|array $keys One or more keys.
      * @return mixed
      */
     public function watch($keys)
@@ -229,10 +235,10 @@ class MultiExecContext
             throw new ClientException('WATCH after MULTI is not allowed');
         }
 
-        $watchReply = $this->client->watch($keys);
+        $reply = $this->client->watch($keys);
         $this->flagState(self::STATE_WATCH);
 
-        return $watchReply;
+        return $reply;
     }
 
     /**
@@ -245,8 +251,7 @@ class MultiExecContext
         if ($this->checkState(self::STATE_INITIALIZED | self::STATE_CAS)) {
             $this->unflagState(self::STATE_CAS);
             $this->client->multi();
-        }
-        else {
+        } else {
             $this->initialize();
         }
 
@@ -311,7 +316,7 @@ class MultiExecContext
                 throw new \InvalidArgumentException('Argument passed must be a callable object');
             }
 
-            if (count($this->commands) > 0) {
+            if (!$this->commands->isEmpty()) {
                 $this->discard();
                 throw new ClientException('Cannot execute a transaction block after using fluent interface');
             }
@@ -326,7 +331,7 @@ class MultiExecContext
     /**
      * Handles the actual execution of the whole transaction.
      *
-     * @param mixed $callable Callback for execution.
+     * @param  mixed $callable Optional callback for execution.
      * @return array
      */
     public function execute($callable = null)
@@ -334,25 +339,26 @@ class MultiExecContext
         $this->checkBeforeExecution($callable);
 
         $reply = null;
-        $returnValues = array();
-        $attemptsLeft = isset($this->options['retry']) ? (int)$this->options['retry'] : 0;
+        $values = array();
+        $attempts = isset($this->options['retry']) ? (int) $this->options['retry'] : 0;
 
         do {
             if ($callable !== null) {
                 $this->executeTransactionBlock($callable);
             }
 
-            if (count($this->commands) === 0) {
+            if ($this->commands->isEmpty()) {
                 if ($this->checkState(self::STATE_WATCH)) {
                     $this->discard();
                 }
-                return;
+
+                return null;
             }
 
             $reply = $this->client->exec();
 
             if ($reply === null) {
-                if ($attemptsLeft === 0) {
+                if ($attempts === 0) {
                     $message = 'The current transaction has been aborted by the server';
                     throw new AbortedMultiExecException($this, $message);
                 }
@@ -360,35 +366,42 @@ class MultiExecContext
                 $this->reset();
 
                 if (isset($this->options['on_retry']) && is_callable($this->options['on_retry'])) {
-                    call_user_func($this->options['on_retry'], $this, $attemptsLeft);
+                    call_user_func($this->options['on_retry'], $this, $attempts);
                 }
 
                 continue;
             }
 
             break;
-        } while ($attemptsLeft-- > 0);
+        } while ($attempts-- > 0);
 
-        $execReply = $reply instanceof \Iterator ? iterator_to_array($reply) : $reply;
-        $sizeofReplies = count($execReply);
+        $exec = $reply instanceof \Iterator ? iterator_to_array($reply) : $reply;
         $commands = $this->commands;
 
-        if ($sizeofReplies !== count($commands)) {
+        $size = count($exec);
+        if ($size !== count($commands)) {
             $this->onProtocolError("EXEC returned an unexpected number of replies");
         }
 
-        for ($i = 0; $i < $sizeofReplies; $i++) {
-            $commandReply = $execReply[$i];
+        $clientOpts = $this->client->getOptions();
+        $useExceptions = isset($clientOpts->exceptions) ? $clientOpts->exceptions : true;
+
+        for ($i = 0; $i < $size; $i++) {
+            $commandReply = $exec[$i];
+
+            if ($commandReply instanceof ResponseErrorInterface && $useExceptions) {
+                $message = $commandReply->getMessage();
+                throw new ServerException($message);
+            }
 
             if ($commandReply instanceof \Iterator) {
                 $commandReply = iterator_to_array($commandReply);
             }
 
-            $returnValues[$i] = $commands[$i]->parseResponse($commandReply);
-            unset($commands[$i]);
+            $values[$i] = $commands->dequeue()->parseResponse($commandReply);
         }
 
-        return $returnValues;
+        return $values;
     }
 
     /**
@@ -403,14 +416,11 @@ class MultiExecContext
 
         try {
             call_user_func($callable, $this);
-        }
-        catch (CommunicationException $exception) {
+        } catch (CommunicationException $exception) {
             $blockException = $exception;
-        }
-        catch (ServerException $exception) {
+        } catch (ServerException $exception) {
             $blockException = $exception;
-        }
-        catch (\Exception $exception) {
+        } catch (\Exception $exception) {
             $blockException = $exception;
             $this->discard();
         }
@@ -429,10 +439,10 @@ class MultiExecContext
      */
     private function onProtocolError($message)
     {
-        // Since a MULTI/EXEC block cannot be initialized over a clustered
-        // connection, we can safely assume that Predis\Client::getConnection()
-        // will always return an instance of Predis\Network\IConnectionSingle.
-        Helpers::onCommunicationException(new ProtocolException(
+        // Since a MULTI/EXEC block cannot be initialized when using aggregated
+        // connections, we can safely assume that Predis\Client::getConnection()
+        // will always return an instance of Predis\Connection\SingleConnectionInterface.
+        CommunicationException::handle(new ProtocolException(
             $this->client->getConnection(), $message
         ));
     }

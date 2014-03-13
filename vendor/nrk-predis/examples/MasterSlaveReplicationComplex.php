@@ -13,14 +13,15 @@ require 'SharedConfigurations.php';
 
 // Predis allows to set Lua scripts as read-only operations in the context of
 // replication. This works for both EVAL and EVALSHA and also for the client-side
-// abstraction built upon them (Predis\Commands\ScriptedCommand). This example
+// abstraction built upon them (Predis\Command\ScriptedCommand). This example
 // shows a slightly more complex configuration that injects a new scripted command
 // in the server profile used by the new client instance and marks it marks it as
 // a read-only operation for replication so that it will be executed on slaves.
 
-use Predis\Profiles\ServerProfile;
-use Predis\Commands\ScriptedCommand;
-use Predis\Network\MasterSlaveReplication;
+use Predis\Command\ScriptedCommand;
+use Predis\Connection\MasterSlaveReplication;
+use Predis\Profile\ServerProfile;
+use Predis\Replication\ReplicationStrategy;
 
 // ------------------------------------------------------------------------- //
 
@@ -50,15 +51,17 @@ $parameters = array(
 );
 
 $options = array(
-    'profile' => function($options) {
-        $profile = ServerProfile::get('2.6');
+    'profile' => function ($options, $option) {
+        $profile = $options->getDefault($option);
         $profile->defineCommand('hmgetall', 'HashMultipleGetAll');
 
         return $profile;
     },
-    'replication' => function($options) {
-        $replication = new MasterSlaveReplication();
-        $replication->setScriptReadOnly(HashMultipleGetAll::BODY);
+    'replication' => function ($options) {
+        $strategy = new ReplicationStrategy();
+        $strategy->setScriptReadOnly(HashMultipleGetAll::BODY);
+
+        $replication = new MasterSlaveReplication($strategy);
 
         return $replication;
     },

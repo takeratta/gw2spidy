@@ -11,8 +11,8 @@
 
 namespace Predis\Protocol\Text;
 
-use Predis\Commands\ICommand;
-use Predis\Protocol\ICommandSerializer;
+use Predis\Command\CommandInterface;
+use Predis\Protocol\CommandSerializerInterface;
 
 /**
  * Implements a pluggable command serializer using the standard  wire protocol
@@ -21,12 +21,12 @@ use Predis\Protocol\ICommandSerializer;
  * @link http://redis.io/topics/protocol
  * @author Daniele Alessandri <suppakilla@gmail.com>
  */
-class TextCommandSerializer implements ICommandSerializer
+class TextCommandSerializer implements CommandSerializerInterface
 {
     /**
      * {@inheritdoc}
      */
-    public function serialize(ICommand $command)
+    public function serialize(CommandInterface $command)
     {
         $commandId = $command->getId();
         $arguments = $command->getArguments();
@@ -36,7 +36,7 @@ class TextCommandSerializer implements ICommandSerializer
 
         $buffer = "*{$reqlen}\r\n\${$cmdlen}\r\n{$commandId}\r\n";
 
-        for ($i = 0; $i < $reqlen - 1; $i++) {
+        for ($i = 0, $reqlen--; $i < $reqlen; $i++) {
             $argument = $arguments[$i];
             $arglen = strlen($argument);
             $buffer .= "\${$arglen}\r\n{$argument}\r\n";

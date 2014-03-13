@@ -11,11 +11,11 @@
 
 namespace Predis\Protocol\Text;
 
-use Predis\Commands\ICommand;
-use Predis\Protocol\IResponseReader;
-use Predis\Protocol\ICommandSerializer;
-use Predis\Protocol\IComposableProtocolProcessor;
-use Predis\Network\IConnectionComposable;
+use Predis\Command\CommandInterface;
+use Predis\Connection\ComposableConnectionInterface;
+use Predis\Protocol\ResponseReaderInterface;
+use Predis\Protocol\CommandSerializerInterface;
+use Predis\Protocol\ComposableProtocolInterface;
 
 /**
  * Implements a customizable protocol processor that uses the standard Redis
@@ -25,7 +25,7 @@ use Predis\Network\IConnectionComposable;
  * @link http://redis.io/topics/protocol
  * @author Daniele Alessandri <suppakilla@gmail.com>
  */
-class ComposableTextProtocol implements IComposableProtocolProcessor
+class ComposableTextProtocol implements ComposableProtocolInterface
 {
     private $serializer;
     private $reader;
@@ -66,11 +66,6 @@ class ComposableTextProtocol implements IComposableProtocolProcessor
                 $this->reader->setHandler(TextProtocol::PREFIX_MULTI_BULK, $handler);
                 break;
 
-            case 'throw_errors':
-                $handler = $value ? new ResponseErrorHandler() : new ResponseErrorSilentHandler();
-                $this->reader->setHandler(TextProtocol::PREFIX_ERROR, $handler);
-                break;
-
             default:
                 throw new \InvalidArgumentException("The option $option is not supported by the current protocol");
         }
@@ -79,7 +74,7 @@ class ComposableTextProtocol implements IComposableProtocolProcessor
     /**
      * {@inheritdoc}
      */
-    public function serialize(ICommand $command)
+    public function serialize(CommandInterface $command)
     {
         return $this->serializer->serialize($command);
     }
@@ -87,7 +82,7 @@ class ComposableTextProtocol implements IComposableProtocolProcessor
     /**
      * {@inheritdoc}
      */
-    public function write(IConnectionComposable $connection, ICommand $command)
+    public function write(ComposableConnectionInterface $connection, CommandInterface $command)
     {
         $connection->writeBytes($this->serializer->serialize($command));
     }
@@ -95,7 +90,7 @@ class ComposableTextProtocol implements IComposableProtocolProcessor
     /**
      * {@inheritdoc}
      */
-    public function read(IConnectionComposable $connection)
+    public function read(ComposableConnectionInterface $connection)
     {
         return $this->reader->read($connection);
     }
@@ -103,7 +98,7 @@ class ComposableTextProtocol implements IComposableProtocolProcessor
     /**
      * {@inheritdoc}
      */
-    public function setSerializer(ICommandSerializer $serializer)
+    public function setSerializer(CommandSerializerInterface $serializer)
     {
         $this->serializer = $serializer;
     }
@@ -119,7 +114,7 @@ class ComposableTextProtocol implements IComposableProtocolProcessor
     /**
      * {@inheritdoc}
      */
-    public function setReader(IResponseReader $reader)
+    public function setReader(ResponseReaderInterface $reader)
     {
         $this->reader = $reader;
     }

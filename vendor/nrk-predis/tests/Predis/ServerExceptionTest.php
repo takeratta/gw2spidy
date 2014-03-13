@@ -11,12 +11,12 @@
 
 namespace Predis;
 
-use \PHPUnit_Framework_TestCase as StandardTestCase;
+use PredisTestCase;
 
 /**
  *
  */
-class ServerExceptionTest extends StandardTestCase
+class ServerExceptionTest extends PredisTestCase
 {
     const ERR_WRONG_KEY_TYPE = 'ERR Operation against a key holding the wrong kind of value';
 
@@ -38,8 +38,8 @@ class ServerExceptionTest extends StandardTestCase
         $exception = new ServerException(self::ERR_WRONG_KEY_TYPE);
 
         $this->assertInstanceOf('Predis\ServerException', $exception);
-        $this->assertInstanceOf('Predis\IRedisServerError', $exception);
-        $this->assertInstanceOf('Predis\IReplyObject', $exception);
+        $this->assertInstanceOf('Predis\ResponseErrorInterface', $exception);
+        $this->assertInstanceOf('Predis\ResponseObjectInterface', $exception);
         $this->assertInstanceOf('Predis\PredisException', $exception);
     }
 

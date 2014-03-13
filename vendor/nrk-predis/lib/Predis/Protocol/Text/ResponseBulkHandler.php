@@ -11,10 +11,10 @@
 
 namespace Predis\Protocol\Text;
 
-use Predis\Helpers;
-use Predis\Protocol\IResponseHandler;
+use Predis\CommunicationException;
+use Predis\Connection\ComposableConnectionInterface;
 use Predis\Protocol\ProtocolException;
-use Predis\Network\IConnectionComposable;
+use Predis\Protocol\ResponseHandlerInterface;
 
 /**
  * Implements a response handler for bulk replies using the standard wire
@@ -23,22 +23,22 @@ use Predis\Network\IConnectionComposable;
  * @link http://redis.io/topics/protocol
  * @author Daniele Alessandri <suppakilla@gmail.com>
  */
-class ResponseBulkHandler implements IResponseHandler
+class ResponseBulkHandler implements ResponseHandlerInterface
 {
     /**
      * Handles a bulk reply returned by Redis.
      *
-     * @param IConnectionComposable $connection Connection to Redis.
-     * @param string $lengthString Bytes size of the bulk reply.
+     * @param  ComposableConnectionInterface $connection   Connection to Redis.
+     * @param  string                        $lengthString Bytes size of the bulk reply.
      * @return string
      */
-    public function handle(IConnectionComposable $connection, $lengthString)
+    public function handle(ComposableConnectionInterface $connection, $lengthString)
     {
         $length = (int) $lengthString;
 
-        if ($length != $lengthString) {
-            Helpers::onCommunicationException(new ProtocolException(
-                $connection, "Cannot parse '$length' as data length"
+        if ("$length" !== $lengthString) {
+            CommunicationException::handle(new ProtocolException(
+                $connection, "Cannot parse '$lengthString' as bulk length"
             ));
         }
 

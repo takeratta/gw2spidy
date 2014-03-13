@@ -11,10 +11,12 @@
 
 namespace Predis\Pipeline;
 
-use Predis\Client;
-use Predis\Helpers;
+use SplQueue;
+use Predis\BasicClientInterface;
 use Predis\ClientException;
-use Predis\Commands\ICommand;
+use Predis\ClientInterface;
+use Predis\ExecutableContextInterface;
+use Predis\Command\CommandInterface;
 
 /**
  * Abstraction of a pipeline context where write and read operations
@@ -22,53 +24,39 @@ use Predis\Commands\ICommand;
  *
  * @author Daniele Alessandri <suppakilla@gmail.com>
  */
-class PipelineContext
+class PipelineContext implements BasicClientInterface, ExecutableContextInterface
 {
     private $client;
     private $executor;
+    private $pipeline;
 
-    private $pipeline = array();
-    private $replies  = array();
-    private $running  = false;
+    private $replies = array();
+    private $running = false;
 
     /**
-     * @param Client Client instance used by the context.
-     * @param array Options for the context initialization.
+     * @param ClientInterface           $client   Client instance used by the context.
+     * @param PipelineExecutorInterface $executor Pipeline executor instace.
      */
-    public function __construct(Client $client, Array $options = null)
+    public function __construct(ClientInterface $client, PipelineExecutorInterface $executor = null)
     {
         $this->client = $client;
-        $this->executor = $this->createExecutor($client, $options ?: array());
+        $this->executor = $executor ?: $this->createExecutor($client);
+        $this->pipeline = new SplQueue();
     }
 
     /**
      * Returns a pipeline executor depending on the kind of the underlying
      * connection and the passed options.
      *
-     * @param Client Client instance used by the context.
-     * @param array Options for the context initialization.
-     * @return IPipelineExecutor
+     * @param  ClientInterface           $client Client instance used by the context.
+     * @return PipelineExecutorInterface
      */
-    protected function createExecutor(Client $client, Array $options)
+    protected function createExecutor(ClientInterface $client)
     {
-        if (!$options) {
-            return new StandardExecutor();
-        }
+        $options = $client->getOptions();
 
-        if (isset($options['executor'])) {
-            $executor = $options['executor'];
-            if (!$executor instanceof IPipelineExecutor) {
-                throw new \InvalidArgumentException(
-                    'The executor option accepts only instances ' .
-                    'of Predis\Pipeline\IPipelineExecutor'
-                );
-            }
-            return $executor;
-        }
-
-        if (isset($options['safe']) && $options['safe'] == true) {
-            $isCluster = Helpers::isCluster($client->getConnection());
-            return $isCluster ? new SafeClusterExecutor() : new SafeExecutor();
+        if (isset($options->exceptions)) {
+            return new StandardExecutor($options->exceptions);
         }
 
         return new StandardExecutor();
@@ -77,9 +65,9 @@ class PipelineContext
     /**
      * Queues a command into the pipeline buffer.
      *
-     * @param string $method Command ID.
-     * @param array $arguments Arguments for the command.
-     * @return PipelineContext
+     * @param string $method    Command ID.
+     * @param array  $arguments Arguments for the command.
+     * @return $this
      */
     public function __call($method, $arguments)
     {
@@ -92,38 +80,40 @@ class PipelineContext
     /**
      * Queues a command instance into the pipeline buffer.
      *
-     * @param ICommand $command Command to queue in the buffer.
+     * @param CommandInterface $command Command to queue in the buffer.
      */
-    protected function recordCommand(ICommand $command)
+    protected function recordCommand(CommandInterface $command)
     {
-        $this->pipeline[] = $command;
+        $this->pipeline->enqueue($command);
     }
 
     /**
      * Queues a command instance into the pipeline buffer.
      *
-     * @param ICommand $command Command to queue in the buffer.
+     * @param CommandInterface $command Command to queue in the buffer.
+     * @return $this
      */
-    public function executeCommand(ICommand $command)
+    public function executeCommand(CommandInterface $command)
     {
         $this->recordCommand($command);
+
+        return $this;
     }
 
     /**
      * Flushes the buffer that holds the queued commands.
      *
-     * @param Boolean $send Specifies if the commands in the buffer should be sent to Redis.
+     * @param  bool            $send Specifies if the commands in the buffer should be sent to Redis.
      * @return PipelineContext
      */
     public function flushPipeline($send = true)
     {
-        if (count($this->pipeline) > 0) {
-            if ($send) {
-                $connection = $this->client->getConnection();
-                $replies = $this->executor->execute($connection, $this->pipeline);
-                $this->replies = array_merge($this->replies, $replies);
-            }
-            $this->pipeline = array();
+        if ($send && !$this->pipeline->isEmpty()) {
+            $connection = $this->client->getConnection();
+            $replies = $this->executor->execute($connection, $this->pipeline);
+            $this->replies = array_merge($this->replies, $replies);
+        } else {
+            $this->pipeline = new SplQueue();
         }
 
         return $this;
@@ -132,21 +122,22 @@ class PipelineContext
     /**
      * Marks the running status of the pipeline.
      *
-     * @param Boolean $bool True if the pipeline is running.
-     *                      False if the pipeline is not running.
+     * @param bool $bool True if the pipeline is running.
+     *                   False if the pipeline is not running.
      */
     private function setRunning($bool)
     {
         if ($bool === true && $this->running === true) {
             throw new ClientException("This pipeline is already opened");
         }
+
         $this->running = $bool;
     }
 
     /**
      * Handles the actual execution of the whole pipeline.
      *
-     * @param mixed $callable Callback for execution.
+     * @param  mixed $callable Optional callback for execution.
      * @return array
      */
     public function execute($callable = null)
@@ -163,8 +154,7 @@ class PipelineContext
                 call_user_func($callable, $this);
             }
             $this->flushPipeline();
-        }
-        catch (\Exception $exception) {
+        } catch (\Exception $exception) {
             $pipelineBlockException = $exception;
         }
 
@@ -180,7 +170,7 @@ class PipelineContext
     /**
      * Returns the underlying client instance used by the pipeline object.
      *
-     * @return Client
+     * @return ClientInterface
      */
     public function getClient()
     {
@@ -190,7 +180,7 @@ class PipelineContext
     /**
      * Returns the underlying pipeline executor used by the pipeline object.
      *
-     * @return IPipelineExecutor
+     * @return PipelineExecutorInterface
      */
     public function getExecutor()
     {

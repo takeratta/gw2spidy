@@ -11,10 +11,10 @@
 
 namespace Predis\Protocol\Text;
 
-use Predis\Helpers;
-use Predis\Protocol\IResponseHandler;
+use Predis\CommunicationException;
+use Predis\Connection\ComposableConnectionInterface;
 use Predis\Protocol\ProtocolException;
-use Predis\Network\IConnectionComposable;
+use Predis\Protocol\ResponseHandlerInterface;
 
 /**
  * Implements a response handler for integer replies using the standard wire
@@ -23,23 +23,23 @@ use Predis\Network\IConnectionComposable;
  * @link http://redis.io/topics/protocol
  * @author Daniele Alessandri <suppakilla@gmail.com>
  */
-class ResponseIntegerHandler implements IResponseHandler
+class ResponseIntegerHandler implements ResponseHandlerInterface
 {
     /**
      * Handles an integer reply returned by Redis.
      *
-     * @param IConnectionComposable $connection Connection to Redis.
-     * @param string $number String representation of an integer.
+     * @param  ComposableConnectionInterface $connection Connection to Redis.
+     * @param  string                        $number     String representation of an integer.
      * @return int
      */
-    public function handle(IConnectionComposable $connection, $number)
+    public function handle(ComposableConnectionInterface $connection, $number)
     {
         if (is_numeric($number)) {
             return (int) $number;
         }
 
         if ($number !== 'nil') {
-            Helpers::onCommunicationException(new ProtocolException(
+            CommunicationException::handle(new ProtocolException(
                 $connection, "Cannot parse '$number' as numeric response"
             ));
         }

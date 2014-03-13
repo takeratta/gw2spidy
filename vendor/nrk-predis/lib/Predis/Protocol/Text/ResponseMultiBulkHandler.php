@@ -11,10 +11,10 @@
 
 namespace Predis\Protocol\Text;
 
-use Predis\Helpers;
-use Predis\Protocol\IResponseHandler;
+use Predis\CommunicationException;
+use Predis\Connection\ComposableConnectionInterface;
 use Predis\Protocol\ProtocolException;
-use Predis\Network\IConnectionComposable;
+use Predis\Protocol\ResponseHandlerInterface;
 
 /**
  * Implements a response handler for multi-bulk replies using the standard
@@ -23,22 +23,22 @@ use Predis\Network\IConnectionComposable;
  * @link http://redis.io/topics/protocol
  * @author Daniele Alessandri <suppakilla@gmail.com>
  */
-class ResponseMultiBulkHandler implements IResponseHandler
+class ResponseMultiBulkHandler implements ResponseHandlerInterface
 {
     /**
      * Handles a multi-bulk reply returned by Redis.
      *
-     * @param IConnectionComposable $connection Connection to Redis.
-     * @param string $lengthString Number of items in the multi-bulk reply.
+     * @param  ComposableConnectionInterface $connection   Connection to Redis.
+     * @param  string                        $lengthString Number of items in the multi-bulk reply.
      * @return array
      */
-    public function handle(IConnectionComposable $connection, $lengthString)
+    public function handle(ComposableConnectionInterface $connection, $lengthString)
     {
         $length = (int) $lengthString;
 
-        if ($length != $lengthString) {
-            Helpers::onCommunicationException(new ProtocolException(
-                $connection, "Cannot parse '$length' as data length"
+        if ("$length" !== $lengthString) {
+            CommunicationException::handle(new ProtocolException(
+                $connection, "Cannot parse '$lengthString' as multi-bulk length"
             ));
         }
 
@@ -58,8 +58,7 @@ class ResponseMultiBulkHandler implements IResponseHandler
 
                 if (isset($handlersCache[$prefix])) {
                     $handler = $handlersCache[$prefix];
-                }
-                else {
+                } else {
                     $handler = $reader->getHandler($prefix);
                     $handlersCache[$prefix] = $handler;
                 }

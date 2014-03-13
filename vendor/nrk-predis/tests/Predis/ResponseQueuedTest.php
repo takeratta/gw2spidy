@@ -11,12 +11,12 @@
 
 namespace Predis;
 
-use \PHPUnit_Framework_TestCase as StandardTestCase;
+use PredisTestCase;
 
 /**
  *
  */
-class ResponseQueuedTest extends StandardTestCase
+class ResponseQueuedTest extends PredisTestCase
 {
     /**
      * @group disconnected
@@ -25,7 +25,7 @@ class ResponseQueuedTest extends StandardTestCase
     {
         $queued = new ResponseQueued();
 
-        $this->assertInstanceOf('Predis\IReplyObject', $queued);
+        $this->assertInstanceOf('Predis\ResponseObjectInterface', $queued);
     }
 
     /**

@@ -11,15 +11,14 @@
 
 namespace Predis\PubSub;
 
-use \PHPUnit_Framework_TestCase as StandardTestCase;
-
+use PredisTestCase;
 use Predis\Client;
-use Predis\Profiles\ServerProfile;
+use Predis\Profile\ServerProfile;
 
 /**
  * @group realm-pubsub
  */
-class PubSubContextTest extends StandardTestCase
+class PubSubContextTest extends PredisTestCase
 {
     /**
      * @group disconnected
@@ -28,7 +27,7 @@ class PubSubContextTest extends StandardTestCase
      */
     public function testPubSubContextRequirePubSubRelatedCommand()
     {
-        $profile = $this->getMock('Predis\Profiles\IServerProfile');
+        $profile = $this->getMock('Predis\Profile\ServerProfileInterface');
         $profile->expects($this->any())
                 ->method('supportsCommands')
                 ->will($this->returnValue(false));
@@ -40,11 +39,11 @@ class PubSubContextTest extends StandardTestCase
     /**
      * @group disconnected
      * @expectedException Predis\NotSupportedException
-     * @expectedExceptionMessage Cannot initialize a PUB/SUB context over a cluster of connections
+     * @expectedExceptionMessage Cannot initialize a PUB/SUB context when using aggregated connections
      */
     public function testPubSubContextDoesNotWorkOnClusters()
     {
-        $cluster = $this->getMock('Predis\Network\IConnectionCluster');
+        $cluster = $this->getMock('Predis\Connection\ClusterConnectionInterface');
 
         $client = new Client($cluster);
         $pubsub = new PubSubContext($client);
@@ -55,7 +54,7 @@ class PubSubContextTest extends StandardTestCase
      */
     public function testConstructorWithoutSubscriptionsDoesNotOpenContext()
     {
-        $connection = $this->getMock('Predis\Network\IConnectionSingle');
+        $connection = $this->getMock('Predis\Connection\SingleConnectionInterface');
 
         $client = $this->getMock('Predis\Client', array('executeCommand'), array($connection));
         $client->expects($this->never())->method('executeCommand');
@@ -73,14 +72,14 @@ class PubSubContextTest extends StandardTestCase
         $cmdSubscribe = $profile->createCommand('subscribe', array('channel:foo'));
         $cmdPsubscribe = $profile->createCommand('psubscribe', array('channels:*'));
 
-        $connection = $this->getMock('Predis\Network\IConnectionSingle');
+        $connection = $this->getMock('Predis\Connection\SingleConnectionInterface');
         $connection->expects($this->exactly(2))->method('writeCommand');
 
         $client = $this->getMock('Predis\Client', array('createCommand', 'writeCommand'), array($connection));
         $client->expects($this->exactly(2))
                ->method('createCommand')
                ->with($this->logicalOr($this->equalTo('subscribe'), $this->equalTo('psubscribe')))
-               ->will($this->returnCallback(function($id, $args) use($profile) {
+               ->will($this->returnCallback(function ($id, $args) use ($profile) {
                    return $profile->createCommand($id, $args);
                }));
 
@@ -93,7 +92,7 @@ class PubSubContextTest extends StandardTestCase
      */
     public function testClosingContextWithTrueClosesConnection()
     {
-        $connection = $this->getMock('Predis\Network\IConnectionSingle');
+        $connection = $this->getMock('Predis\Connection\SingleConnectionInterface');
 
         $client = $this->getMock('Predis\Client', array('disconnect'), array($connection));
         $client->expects($this->exactly(1))->method('disconnect');
@@ -114,7 +113,7 @@ class PubSubContextTest extends StandardTestCase
         $classUnsubscribe = $profile->getCommandClass('unsubscribe');
         $classPunsubscribe = $profile->getCommandClass('punsubscribe');
 
-        $connection = $this->getMock('Predis\Network\IConnectionSingle');
+        $connection = $this->getMock('Predis\Connection\SingleConnectionInterface');
 
         $client = $this->getMock('Predis\Client', array('disconnect'), array($connection));
 
@@ -136,7 +135,7 @@ class PubSubContextTest extends StandardTestCase
      */
     public function testIsNotValidWhenNotSubscribed()
     {
-        $connection = $this->getMock('Predis\Network\IConnectionSingle');
+        $connection = $this->getMock('Predis\Connection\SingleConnectionInterface');
         $client = $this->getMock('Predis\Client', array('disconnect'), array($connection));
 
         $pubsub = new PubSubContext($client);
@@ -152,7 +151,7 @@ class PubSubContextTest extends StandardTestCase
     {
         $rawmessage = array('message', 'channel:foo', 'message from channel');
 
-        $connection = $this->getMock('Predis\Network\IConnectionSingle');
+        $connection = $this->getMock('Predis\Connection\SingleConnectionInterface');
         $connection->expects($this->once())->method('read')->will($this->returnValue($rawmessage));
 
         $client = new Client($connection);
@@ -171,7 +170,7 @@ class PubSubContextTest extends StandardTestCase
     {
         $rawmessage = array('pmessage', 'channel:*', 'channel:foo', 'message from channel');
 
-        $connection = $this->getMock('Predis\Network\IConnectionSingle');
+        $connection = $this->getMock('Predis\Connection\SingleConnectionInterface');
         $connection->expects($this->once())->method('read')->will($this->returnValue($rawmessage));
 
         $client = new Client($connection);
@@ -191,7 +190,7 @@ class PubSubContextTest extends StandardTestCase
     {
         $rawmessage = array('subscribe', 'channel:foo', 1);
 
-        $connection = $this->getMock('Predis\Network\IConnectionSingle');
+        $connection = $this->getMock('Predis\Connection\SingleConnectionInterface');
         $connection->expects($this->once())->method('read')->will($this->returnValue($rawmessage));
 
         $client = new Client($connection);
@@ -210,7 +209,7 @@ class PubSubContextTest extends StandardTestCase
     {
         $rawmessage = array('unsubscribe', 'channel:foo', 1);
 
-        $connection = $this->getMock('Predis\Network\IConnectionSingle');
+        $connection = $this->getMock('Predis\Connection\SingleConnectionInterface');
         $connection->expects($this->once())->method('read')->will($this->returnValue($rawmessage));
 
         $client = new Client($connection);
@@ -229,7 +228,7 @@ class PubSubContextTest extends StandardTestCase
     {
         $rawmessage = array('unsubscribe', 'channel:foo', 0);
 
-        $connection = $this->getMock('Predis\Network\IConnectionSingle');
+        $connection = $this->getMock('Predis\Connection\SingleConnectionInterface');
         $connection->expects($this->once())->method('read')->will($this->returnValue($rawmessage));
 
         $client = new Client($connection);
@@ -243,6 +242,19 @@ class PubSubContextTest extends StandardTestCase
         $this->assertSame(0, $message->payload);
 
         $this->assertFalse($pubsub->valid());
+    }
+
+    /**
+     * @group disconnected
+     */
+    public function testGetUnderlyingClientInstance()
+    {
+        $connection = $this->getMock('Predis\Connection\SingleConnectionInterface');
+
+        $client = new Client($connection);
+        $pubsub = new PubSubContext($client);
+
+        $this->assertSame($client, $pubsub->getClient());
     }
 
     // ******************************************************************** //
@@ -262,12 +274,13 @@ class PubSubContextTest extends StandardTestCase
             'read_write_timeout' => 2,
         );
 
+        $options = array('profile' => REDIS_SERVER_VERSION);
         $messages = array();
 
-        $producer = new Client($parameters, REDIS_SERVER_VERSION);
+        $producer = new Client($parameters, $options);
         $producer->connect();
 
-        $consumer = new Client($parameters, REDIS_SERVER_VERSION);
+        $consumer = new Client($parameters, $options);
         $consumer->connect();
 
         $pubsub = new PubSubContext($consumer);

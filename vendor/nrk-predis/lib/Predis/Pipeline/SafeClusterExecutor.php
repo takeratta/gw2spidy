@@ -11,9 +11,9 @@
 
 namespace Predis\Pipeline;
 
-use Predis\ServerException;
+use SplQueue;
 use Predis\CommunicationException;
-use Predis\Network\IConnection;
+use Predis\Connection\ConnectionInterface;
 
 /**
  * Implements a pipeline executor strategy for connection clusters that does
@@ -22,16 +22,16 @@ use Predis\Network\IConnection;
  *
  * @author Daniele Alessandri <suppakilla@gmail.com>
  */
-class SafeClusterExecutor implements IPipelineExecutor
+class SafeClusterExecutor implements PipelineExecutorInterface
 {
     /**
      * {@inheritdoc}
      */
-    public function execute(IConnection $connection, &$commands)
+    public function execute(ConnectionInterface $connection, SplQueue $commands)
     {
-        $connectionExceptions = array();
-        $sizeofPipe = count($commands);
+        $size = count($commands);
         $values = array();
+        $connectionExceptions = array();
 
         foreach ($commands as $command) {
             $cmdConnection = $connection->getConnection($command);
@@ -42,33 +42,27 @@ class SafeClusterExecutor implements IPipelineExecutor
 
             try {
                 $cmdConnection->writeCommand($command);
-            }
-            catch (CommunicationException $exception) {
+            } catch (CommunicationException $exception) {
                 $connectionExceptions[spl_object_hash($cmdConnection)] = $exception;
             }
         }
 
-        for ($i = 0; $i < $sizeofPipe; $i++) {
-            $command = $commands[$i];
-            unset($commands[$i]);
+        for ($i = 0; $i < $size; $i++) {
+            $command = $commands->dequeue();
 
             $cmdConnection = $connection->getConnection($command);
             $connectionObjectHash = spl_object_hash($cmdConnection);
 
             if (isset($connectionExceptions[$connectionObjectHash])) {
-                $values[] = $connectionExceptions[$connectionObjectHash];
+                $values[$i] = $connectionExceptions[$connectionObjectHash];
                 continue;
             }
 
             try {
                 $response = $cmdConnection->readResponse($command);
-                $values[] = $response instanceof \Iterator ? iterator_to_array($response) : $response;
-            }
-            catch (ServerException $exception) {
-                $values[] = $exception->toResponseError();
-            }
-            catch (CommunicationException $exception) {
-                $values[] = $exception;
+                $values[$i] = $response instanceof \Iterator ? iterator_to_array($response) : $response;
+            } catch (CommunicationException $exception) {
+                $values[$i] = $exception;
                 $connectionExceptions[$connectionObjectHash] = $exception;
             }
         }

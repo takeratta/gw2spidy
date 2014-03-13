@@ -11,15 +11,14 @@
 
 namespace Predis\Protocol\Text;
 
-use Predis\Helpers;
+use Predis\CommunicationException;
 use Predis\ResponseError;
 use Predis\ResponseQueued;
-use Predis\ServerException;
-use Predis\Commands\ICommand;
-use Predis\Protocol\IProtocolProcessor;
+use Predis\Command\CommandInterface;
+use Predis\Connection\ComposableConnectionInterface;
+use Predis\Iterator\MultiBulkResponseSimple;
 use Predis\Protocol\ProtocolException;
-use Predis\Network\IConnectionComposable;
-use Predis\Iterators\MultiBulkResponseSimple;
+use Predis\Protocol\ProtocolInterface;
 
 /**
  * Implements a protocol processor for the standard wire protocol defined by Redis.
@@ -27,7 +26,7 @@ use Predis\Iterators\MultiBulkResponseSimple;
  * @link http://redis.io/topics/protocol
  * @author Daniele Alessandri <suppakilla@gmail.com>
  */
-class TextProtocol implements IProtocolProcessor
+class TextProtocol implements ProtocolInterface
 {
     const NEWLINE = "\r\n";
     const OK      = 'OK';
@@ -44,7 +43,6 @@ class TextProtocol implements IProtocolProcessor
     const BUFFER_SIZE = 4096;
 
     private $mbiterable;
-    private $throwErrors;
     private $serializer;
 
     /**
@@ -52,15 +50,14 @@ class TextProtocol implements IProtocolProcessor
      */
     public function __construct()
     {
-        $this->mbiterable  = false;
-        $this->throwErrors = true;
-        $this->serializer  = new TextCommandSerializer();
+        $this->mbiterable = false;
+        $this->serializer = new TextCommandSerializer();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function write(IConnectionComposable $connection, ICommand $command)
+    public function write(ComposableConnectionInterface $connection, CommandInterface $command)
     {
         $connection->writeBytes($this->serializer->serialize($command));
     }
@@ -68,14 +65,14 @@ class TextProtocol implements IProtocolProcessor
     /**
      * {@inheritdoc}
      */
-    public function read(IConnectionComposable $connection)
+    public function read(ComposableConnectionInterface $connection)
     {
         $chunk = $connection->readLine();
         $prefix = $chunk[0];
         $payload = substr($chunk, 1);
 
         switch ($prefix) {
-            case '+':    // inline
+            case '+':
                 switch ($payload) {
                     case 'OK':
                         return true;
@@ -87,41 +84,40 @@ class TextProtocol implements IProtocolProcessor
                         return $payload;
                 }
 
-            case '$':    // bulk
+            case '$':
                 $size = (int) $payload;
                 if ($size === -1) {
                     return null;
                 }
+
                 return substr($connection->readBytes($size + 2), 0, -2);
 
-            case '*':    // multi bulk
+            case '*':
                 $count = (int) $payload;
 
                 if ($count === -1) {
                     return null;
                 }
-                if ($this->mbiterable == true) {
+                if ($this->mbiterable) {
                     return new MultiBulkResponseSimple($connection, $count);
                 }
 
                 $multibulk = array();
+
                 for ($i = 0; $i < $count; $i++) {
                     $multibulk[$i] = $this->read($connection);
                 }
 
                 return $multibulk;
 
-            case ':':    // integer
+            case ':':
                 return (int) $payload;
 
-            case '-':    // error
-                if ($this->throwErrors) {
-                    throw new ServerException($payload);
-                }
+            case '-':
                 return new ResponseError($payload);
 
             default:
-                Helpers::onCommunicationException(new ProtocolException(
+                CommunicationException::handle(new ProtocolException(
                     $connection, "Unknown prefix: '$prefix'"
                 ));
         }
@@ -135,10 +131,6 @@ class TextProtocol implements IProtocolProcessor
         switch ($option) {
             case 'iterable_multibulk':
                 $this->mbiterable = (bool) $value;
-                break;
-
-            case 'throw_errors':
-                $this->throwErrors = (bool) $value;
                 break;
         }
     }

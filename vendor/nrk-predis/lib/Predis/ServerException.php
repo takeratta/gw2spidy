@@ -16,7 +16,7 @@ namespace Predis;
  *
  * @author Daniele Alessandri <suppakilla@gmail.com>
  */
-class ServerException extends PredisException implements IRedisServerError
+class ServerException extends PredisException implements ResponseErrorInterface
 {
     /**
      * Gets the type of the error returned by Redis.
@@ -26,6 +26,7 @@ class ServerException extends PredisException implements IRedisServerError
     public function getErrorType()
     {
         list($errorType, ) = explode(' ', $this->getMessage(), 2);
+
         return $errorType;
     }
 
