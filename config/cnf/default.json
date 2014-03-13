@@ -18,6 +18,7 @@ cnf = {
     "switchad_client"    : null,
     "request-language"   : "en",
     "apc_clear_cache_host" : null,
+    "default_timezone" : null,
 
 	/*
 	 * hybrid auth config

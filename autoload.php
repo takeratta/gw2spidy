@@ -59,6 +59,11 @@ function getAppConfig($key = null) {
     return $cnf;
 }
 
+if ($tz = getAppConfig('default_timezone')) {
+    date_default_timezone_set($tz);
+}
+
+
 // Include the main Propel script
 require_once __DIR__ . '/vendor/propel/runtime/lib/Propel.php';
 
