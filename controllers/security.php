@@ -191,6 +191,7 @@ $app->get("/reset-password/{reset}", function(Request $request, $reset) use($app
 
     return $app['twig']->render('reset_password.html.twig', array(
         'reset' => $reset,
+        'error' => '',
     ));
 })
     ->bind('reset_password');
