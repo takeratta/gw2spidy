@@ -125,9 +125,9 @@ $app->post("/admin/password", function(Request $request) use($app) {
     if ($user_id) {
         $user = UserQuery::create()->findPk($user_id);
     } else if ($username) {
-        $user = UserQuery::create()->findByUsername($username);
+        $user = UserQuery::create()->findOneByUsername($username);
     } else if ($email) {
-        $user = UserQuery::create()->findByEmail($email);
+        $user = UserQuery::create()->findOneByEmail($email);
     } else {
         $user = null;
     }
