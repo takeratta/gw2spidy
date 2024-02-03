@@ -4,7 +4,7 @@
         "node": "*"
     },
     "dependencies": {
-        "zombie" : "~1.4.1",
+        "zombie" : "~2.0.2",
         "async" : "*",
         "underscore" : "*"
     }
